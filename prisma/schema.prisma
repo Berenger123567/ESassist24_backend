@@ -1,0 +1,243 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoleCode {
+  CLIENT
+  PROFESSIONAL
+  EVALUATOR
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum ProfessionalStatus {
+  PENDING
+  VERIFIED
+  CERTIFIED
+  SUSPENDED
+  REFUSED
+}
+
+enum SpecialtyCode {
+  BUILDING_REPAIR
+  INDUSTRIAL
+  SOLAR_PV
+  GENERATORS
+  PANELS_THREE_PHASE
+}
+
+enum DocumentType {
+  ID_CARD
+  PROFILE_PHOTO
+  DIPLOMA
+  PROFESSIONAL_CERTIFICATE
+  REFERENCE_LETTER
+  WORK_PHOTO
+}
+
+enum DocumentStatus {
+  PENDING
+  SUBMITTED
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum ClientPlatform {
+  WEB
+  ANDROID
+  IOS
+  UNKNOWN
+}
+
+model User {
+  id              String     @id @default(uuid()) @db.Uuid
+  phone           String     @unique
+  firstName       String?
+  lastName        String?
+  status          UserStatus @default(ACTIVE)
+  zoneId          String?    @db.Uuid
+  photoDocumentId String?    @unique @db.Uuid
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  deletedAt       DateTime?
+
+  zone                ServiceZone?         @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  photoDocument       Document?            @relation("UserProfilePhoto", fields: [photoDocumentId], references: [id], onDelete: SetNull)
+  roles               UserRole[]
+  sessions            Session[]
+  documents           Document[]           @relation("DocumentOwner")
+  professionalProfile ProfessionalProfile?
+
+  @@index([zoneId])
+  @@map("users")
+}
+
+model Role {
+  id        String   @id @default(uuid()) @db.Uuid
+  code      RoleCode @unique
+  label     String
+  createdAt DateTime @default(now())
+
+  users UserRole[]
+
+  @@map("roles")
+}
+
+model UserRole {
+  userId    String   @db.Uuid
+  roleId    String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+model OtpCode {
+  id             String         @id @default(uuid()) @db.Uuid
+  phone          String
+  codeHash       String
+  attempts       Int            @default(0)
+  maxAttempts    Int            @default(3)
+  expiresAt      DateTime
+  consumedAt     DateTime?
+  ip             String?
+  userAgent      String?
+  clientPlatform ClientPlatform @default(UNKNOWN)
+  createdAt      DateTime       @default(now())
+
+  @@index([phone, createdAt])
+  @@map("otp_codes")
+}
+
+model Session {
+  id               String         @id @default(uuid()) @db.Uuid
+  userId           String         @db.Uuid
+  refreshTokenHash String         @unique
+  familyId         String         @db.Uuid
+  replacedBySessionId String?     @db.Uuid
+  revokedAt        DateTime?
+  expiresAt        DateTime
+  ip               String?
+  userAgent        String?
+  clientPlatform   ClientPlatform @default(UNKNOWN)
+  clientDeviceId   String?
+  createdAt        DateTime       @default(now())
+
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replacedBy       Session?  @relation("SessionRotation", fields: [replacedBySessionId], references: [id], onDelete: SetNull)
+  replacedSessions Session[] @relation("SessionRotation")
+
+  @@index([userId])
+  @@index([familyId])
+  @@map("sessions")
+}
+
+model Specialty {
+  id        String        @id @default(uuid()) @db.Uuid
+  code      SpecialtyCode @unique
+  label     String
+  sortOrder Int           @default(0)
+  active    Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  professionals ProfessionalSpecialty[]
+
+  @@map("specialties")
+}
+
+model ServiceZone {
+  id         String                               @id @default(uuid()) @db.Uuid
+  code       String                               @unique
+  name       String
+  department String
+  center     Unsupported("geometry(Point,4326)")?
+  createdAt  DateTime                             @default(now())
+  updatedAt  DateTime                             @updatedAt
+
+  users         User[]
+  professionals ProfessionalZone[]
+
+  @@index([department])
+  @@map("service_zones")
+}
+
+model ProfessionalProfile {
+  id              String             @id @default(uuid()) @db.Uuid
+  userId          String             @unique @db.Uuid
+  status          ProfessionalStatus @default(PENDING)
+  experienceYears Int                @default(0)
+  bio             String?
+  submittedAt     DateTime           @default(now())
+  decidedAt       DateTime?
+  decisionReason  String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  user        User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialties ProfessionalSpecialty[]
+  zones       ProfessionalZone[]
+
+  @@index([status])
+  @@map("professional_profiles")
+}
+
+model ProfessionalSpecialty {
+  profileId   String @db.Uuid
+  specialtyId String @db.Uuid
+
+  profile   ProfessionalProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  specialty Specialty           @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+
+  @@id([profileId, specialtyId])
+  @@index([specialtyId])
+  @@map("professional_specialties")
+}
+
+model ProfessionalZone {
+  profileId String @db.Uuid
+  zoneId    String @db.Uuid
+
+  profile ProfessionalProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  zone    ServiceZone         @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+
+  @@id([profileId, zoneId])
+  @@index([zoneId])
+  @@map("professional_zones")
+}
+
+model Document {
+  id          String         @id @default(uuid()) @db.Uuid
+  ownerId     String         @db.Uuid
+  type        DocumentType
+  status      DocumentStatus @default(PENDING)
+  fileName    String
+  contentType String
+  sizeBytes   Int
+  storageKey  String?
+  expiresAt   DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  owner          User  @relation("DocumentOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  profilePhotoOf User? @relation("UserProfilePhoto")
+
+  @@index([ownerId])
+  @@index([type])
+  @@map("documents")
+}

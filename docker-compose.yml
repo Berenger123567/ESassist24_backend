@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: electro
+      POSTGRES_PASSWORD: electro
+      POSTGRES_DB: electro_assist
+    ports:
+      - '5432:5432'
+    volumes:
+      - electro_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U electro -d electro_assist']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    volumes:
+      - electro_redis:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  electro_db:
+  electro_redis:

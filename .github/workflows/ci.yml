@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: electro
+          POSTGRES_PASSWORD: electro
+          POSTGRES_DB: electro_assist_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U electro -d electro_assist_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://electro:electro@localhost:5432/electro_assist_test?schema=public
+      REDIS_URL: redis://localhost:6379
+      JWT_ACCESS_SECRET: ci-access-secret-at-least-32-characters
+      REFRESH_TOKEN_PEPPER: ci-refresh-pepper-16
+      OTP_FIXED_CODE: '123456'
+      OTP_FIXED_PHONES: ''
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Générer le client Prisma
+        run: npx prisma generate
+
+      - name: Appliquer les migrations
+        run: npx prisma migrate deploy
+
+      - name: Charger les données de référence
+        run: npm run db:seed
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests unitaires
+        run: npm test
+
+      - name: Tests e2e
+        run: npm run test:e2e
+
+      - name: Build
+        run: npm run build
+
+      - name: Générer OpenAPI
+        run: npm run openapi:generate
+
+      - name: Vérifier OpenAPI à jour
+        run: git diff --exit-code docs/openapi.json
