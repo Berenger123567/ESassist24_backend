@@ -2,7 +2,13 @@ import { Controller, Get, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiCommonErrors } from '../../common/decorators/api-common-errors.decorator';
 import { CatalogService } from './catalog.service';
-import { SpecialtyListDto, ZoneListDto, ZoneQueryDto } from './dto/catalog.dto';
+import {
+  NearbyZoneListDto,
+  NearbyZonesQueryDto,
+  SpecialtyListDto,
+  ZoneListDto,
+  ZoneQueryDto,
+} from './dto/catalog.dto';
 
 @ApiTags('Référentiels')
 @ApiCommonErrors()
@@ -15,6 +21,13 @@ export class CatalogController {
   @ApiOkResponse({ type: SpecialtyListDto })
   listSpecialties() {
     return this.catalogService.listSpecialties();
+  }
+
+  @Get('zones/nearby')
+  @ApiOperation({ summary: 'Zones de service dans un rayon géographique (PostGIS)' })
+  @ApiOkResponse({ type: NearbyZoneListDto })
+  listNearbyZones(@Query() query: NearbyZonesQueryDto) {
+    return this.catalogService.listNearbyZones(query);
   }
 
   @Get('zones')

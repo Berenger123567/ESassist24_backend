@@ -42,6 +42,11 @@ jobs:
       REFRESH_TOKEN_PEPPER: ci-refresh-pepper-16
       OTP_FIXED_CODE: '123456'
       OTP_FIXED_PHONES: ''
+      OTP_MAX_PER_DEVICE_PER_HOUR: '5'
+      ADMIN_PHONE: '+22900000004'
+      ADMIN_BOOTSTRAP_PASSWORD: 'AdminTest123!'
+      DOCUMENT_SIGNING_SECRET: ci-document-signing-secret-at-least-32
+      DOCUMENT_STORAGE_DIR: ./.tmp-document-storage
 
     steps:
       - uses: actions/checkout@v4

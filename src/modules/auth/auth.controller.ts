@@ -9,7 +9,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { ClientPlatform } from '@prisma/client';
+import { ClientPlatform, OtpChannel } from '@prisma/client';
 import { Request, Response } from 'express';
 import { ApiCommonErrors } from '../../common/decorators/api-common-errors.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -53,6 +53,7 @@ export class AuthController {
     return this.authService.requestOtp(
       dto.phone,
       this.meta(request, userAgent, platform, dto.deviceId),
+      dto.channel ?? OtpChannel.SMS,
     );
   }
 

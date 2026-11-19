@@ -19,7 +19,26 @@ export async function createTestApp(): Promise<{
 }
 
 export async function resetData(prisma: PrismaService): Promise<void> {
+  await prisma.dataRequest.deleteMany();
+  await prisma.documentEvent.deleteMany();
+  await prisma.document.deleteMany();
+  await prisma.adminInvitation.deleteMany();
+  await prisma.otpDelivery.deleteMany();
+  await prisma.adminCredential.deleteMany();
   await prisma.session.deleteMany();
   await prisma.otpCode.deleteMany();
   await prisma.user.deleteMany();
+}
+
+export async function ensureRoles(prisma: PrismaService): Promise<void> {
+  const roles = [
+    { code: 'CLIENT' as const, label: 'Client' },
+    { code: 'PROFESSIONAL' as const, label: 'Électricien' },
+    { code: 'EVALUATOR' as const, label: 'Évaluateur' },
+    { code: 'ADMIN' as const, label: 'Administrateur' },
+  ];
+
+  for (const role of roles) {
+    await prisma.role.upsert({ where: { code: role.code }, update: {}, create: role });
+  }
 }

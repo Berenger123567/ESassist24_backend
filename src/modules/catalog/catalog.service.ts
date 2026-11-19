@@ -8,7 +8,13 @@ import {
   resolveLimit,
 } from '../../common/pagination/pagination';
 import { PrismaService } from '../../prisma/prisma.service';
-import { SpecialtyDto, ZoneDto, ZoneQueryDto } from './dto/catalog.dto';
+import {
+  NearbyZoneDto,
+  NearbyZonesQueryDto,
+  SpecialtyDto,
+  ZoneDto,
+  ZoneQueryDto,
+} from './dto/catalog.dto';
 
 interface ZoneCursor {
   name: string;
@@ -55,5 +61,25 @@ export class CatalogService {
 
     const page = buildPage(rows, limit, (zone) => encodeCursor({ name: zone.name, id: zone.id }));
     return page;
+  }
+
+  async listNearbyZones(query: NearbyZonesQueryDto): Promise<Page<NearbyZoneDto>> {
+    const radiusMeters = query.radiusKm * 1000;
+    const point = Prisma.sql`ST_SetSRID(ST_MakePoint(${query.lng}::float8, ${query.lat}::float8), 4326)::geography`;
+    const rows = await this.prisma.$queryRaw<NearbyZoneDto[]>(Prisma.sql`
+      SELECT
+        z."id" AS "id",
+        z."code" AS "code",
+        z."name" AS "name",
+        z."department" AS "department",
+        ST_Distance(z."center"::geography, ${point}) AS "distanceMeters"
+      FROM "service_zones" z
+      WHERE z."center" IS NOT NULL
+        AND ST_DWithin(z."center"::geography, ${point}, ${radiusMeters}::float8)
+      ORDER BY "distanceMeters" ASC
+      LIMIT 50
+    `);
+
+    return { data: rows, nextCursor: null };
   }
 }

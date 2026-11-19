@@ -1,4 +1,5 @@
 ﻿import { PrismaClient, RoleCode, SpecialtyCode, ProfessionalStatus } from '@prisma/client';
+import { hash as hashPassword } from '@node-rs/argon2';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -22,6 +23,16 @@ const SPECIALTIES: { code: SpecialtyCode; label: string; sortOrder: number }[] =
     sortOrder: 5,
   },
 ];
+
+const ZONE_CENTERS: Record<string, { lng: number; lat: number }> = {
+  'BJ-LIT-COTONOU': { lng: 2.3912, lat: 6.3703 },
+  'BJ-ATL-ABOMEY-CALAVI': { lng: 2.342, lat: 6.443 },
+  'BJ-OUE-PORTO-NOVO': { lng: 2.6045, lat: 6.4969 },
+  'BJ-BOR-PARAKOU': { lng: 2.6297, lat: 9.3361 },
+  'BJ-ATA-NATITINGOU': { lng: 1.375, lat: 10.307 },
+  'BJ-ZOU-BOHICON': { lng: 2.024, lat: 7.523 },
+  'BJ-ZOU-ABOMEY': { lng: 2.003, lat: 7.179 },
+};
 
 const TEST_ACCOUNTS: { phone: string; firstName: string; lastName: string; role: RoleCode }[] = [
   { phone: '+22900000001', firstName: 'Client', lastName: 'Test', role: 'CLIENT' },
@@ -62,6 +73,10 @@ async function seedZones() {
       update: { name: commune.name, department: commune.department },
       create: commune,
     });
+  }
+
+  for (const [code, center] of Object.entries(ZONE_CENTERS)) {
+    await prisma.$executeRaw`UPDATE "service_zones" SET "center" = ST_SetSRID(ST_MakePoint(${center.lng}, ${center.lat}), 4326) WHERE "code" = ${code}`;
   }
 }
 
@@ -143,6 +158,16 @@ async function seedTestAccounts() {
     });
     await grantRole(admin.id, 'CLIENT');
     await grantRole(admin.id, 'ADMIN');
+
+    const adminPassword = process.env.ADMIN_BOOTSTRAP_PASSWORD;
+    if (adminPassword) {
+      const passwordHash = await hashPassword(adminPassword);
+      await prisma.adminCredential.upsert({
+        where: { userId: admin.id },
+        update: { passwordHash, passwordChangedAt: new Date(), failedLoginAttempts: 0 },
+        create: { userId: admin.id, passwordHash },
+      });
+    }
   }
 }
 

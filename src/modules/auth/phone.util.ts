@@ -2,7 +2,7 @@ import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import { ApiError } from '../../common/errors/api-error';
 import { ERROR_CODES } from '../../common/errors/error-codes';
 
-const BENIN_TEST_NUMBER = /^\+2290{7}\d$/;
+const BENIN_TEST_NUMBER = /^\+2290{6}\d{2}$/;
 
 export function normalizePhone(raw: string, allowTestNumbers = false): string {
   const compact = raw

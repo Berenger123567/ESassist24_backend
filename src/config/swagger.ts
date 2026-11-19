@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 
 export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
@@ -7,8 +8,9 @@ export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
     .setDescription(
       'API de confiance, vérification et sécurité pour la mise en relation entre clients et électriciens au Bénin.',
     )
-    .setVersion('0.1.0')
+    .setVersion(app.get(ConfigService).get<string>('APP_VERSION', '0.1.0'))
     .addBearerAuth()
+    .addCookieAuth('ea_refresh')
     .build();
 
   return SwaggerModule.createDocument(app, documentBuilder);

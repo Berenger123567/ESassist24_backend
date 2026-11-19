@@ -1,6 +1,15 @@
 ﻿import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { OtpChannel } from '@prisma/client';
 import { Transform } from 'class-transformer';
-import { IsNotEmpty, IsOptional, IsString, Length, Matches, MaxLength } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Length,
+  Matches,
+  MaxLength,
+} from 'class-validator';
 
 export class RequestOtpDto {
   @ApiProperty({ example: '+22997000000', description: 'Numéro de téléphone béninois' })
@@ -10,10 +19,10 @@ export class RequestOtpDto {
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   phone: string;
 
-  @ApiPropertyOptional({ enum: ['SMS', 'WHATSAPP'], default: 'SMS' })
+  @ApiPropertyOptional({ enum: OtpChannel, default: OtpChannel.SMS })
   @IsOptional()
-  @IsString()
-  channel?: string;
+  @IsEnum(OtpChannel)
+  channel?: OtpChannel;
 
   @ApiPropertyOptional({ description: 'Identifiant appareil (mobile/web)' })
   @IsOptional()

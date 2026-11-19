@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsNumber, IsOptional, IsString, Max, Min, MaxLength } from 'class-validator';
 import { PaginationQueryDto } from '../../../common/pagination/pagination-query.dto';
 
 export class ZoneQueryDto extends PaginationQueryDto {
@@ -14,6 +15,29 @@ export class ZoneQueryDto extends PaginationQueryDto {
   @IsString()
   @MaxLength(50)
   department?: string;
+}
+
+export class NearbyZonesQueryDto {
+  @ApiProperty({ example: 6.3703 })
+  @Type(() => Number)
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  lat: number;
+
+  @ApiProperty({ example: 2.3912 })
+  @Type(() => Number)
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  lng: number;
+
+  @ApiProperty({ example: 25, description: 'Rayon en kilomètres' })
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0.1)
+  @Max(1000)
+  radiusKm: number;
 }
 
 export class SpecialtyDto {
@@ -57,5 +81,18 @@ export class ZoneListDto {
   data: ZoneDto[];
 
   @ApiPropertyOptional({ nullable: true })
+  nextCursor: string | null;
+}
+
+export class NearbyZoneDto extends ZoneDto {
+  @ApiProperty({ example: 1250.5 })
+  distanceMeters: number;
+}
+
+export class NearbyZoneListDto {
+  @ApiProperty({ type: [NearbyZoneDto] })
+  data: NearbyZoneDto[];
+
+  @ApiPropertyOptional({ nullable: true, example: null })
   nextCursor: string | null;
 }

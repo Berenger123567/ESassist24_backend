@@ -116,7 +116,7 @@ describe('Profils, spÃ©cialitÃ©s et zones (e2e)', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         specialtyIds: specialties.map((specialty) => specialty.id),
-        zoneIds: zones.map((zone) => zone.id),
+        zoneIds: zones.slice(0, 50).map((zone) => zone.id),
         experienceYears: 8,
         bio: 'Ã‰lectricien bÃ¢timent et solaire.',
       })

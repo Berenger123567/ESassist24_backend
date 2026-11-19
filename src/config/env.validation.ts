@@ -18,6 +18,7 @@ const envSchema = z
     OTP_REQUEST_COOLDOWN_SECONDS: z.coerce.number().int().min(10).default(60),
     OTP_MAX_PER_PHONE_PER_HOUR: z.coerce.number().int().min(1).default(5),
     OTP_MAX_PER_IP_PER_HOUR: z.coerce.number().int().min(1).default(10),
+    OTP_MAX_PER_DEVICE_PER_HOUR: z.coerce.number().int().min(1).default(5),
     OTP_FIXED_CODE: z
       .string()
       .regex(/^\d{6}$/)
@@ -26,7 +27,20 @@ const envSchema = z
     OTP_FIXED_PHONES: z.string().default(''),
 
     ADMIN_PHONE: z.string().optional().or(z.literal('')),
+    ADMIN_BOOTSTRAP_PASSWORD: z.string().optional().or(z.literal('')),
+    ADMIN_INVITE_TTL_SECONDS: z.coerce.number().int().min(60).default(604800),
+    ADMIN_LOGIN_MAX_PER_HOUR: z.coerce.number().int().min(1).default(5),
+    ADMIN_LOGIN_LOCK_MINUTES: z.coerce.number().int().min(1).default(15),
+    ADMIN_MFA_TTL_SECONDS: z.coerce.number().int().min(30).default(300),
+    TOTP_ISSUER: z.string().min(1).default('Electro Assist 24H'),
     CORS_ORIGINS: z.string().default(''),
+
+    DOCUMENT_SIGNING_SECRET: z.string().min(32).default('change-me-document-signing-secret-32'),
+    DOCUMENT_STORAGE_DIR: z.string().min(1).default('./storage/private'),
+    DOCUMENT_MAX_UPLOAD_BYTES: z.coerce.number().int().min(1024).default(10485760),
+    DOCUMENT_EXPIRY_DAYS: z.coerce.number().int().min(1).default(365),
+    DOCUMENT_SIGNED_URL_TTL_SECONDS: z.coerce.number().int().min(30).default(600),
+    APP_VERSION: z.string().min(1).default('0.1.0'),
 
     AUTH_COOKIE_DOMAIN: z.string().optional().or(z.literal('')),
     AUTH_COOKIE_SECURE: z.enum(['true', 'false']).default('false'),
@@ -70,6 +84,13 @@ const envSchema = z
           message: 'Le pepper de refresh token par défaut est interdit en production.',
         });
       }
+      if (env.DOCUMENT_SIGNING_SECRET.startsWith('change-me')) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['DOCUMENT_SIGNING_SECRET'],
+          message: 'Le secret de signature documentaire par défaut est interdit en production.',
+        });
+      }
     }
   });
 
@@ -87,6 +108,8 @@ export function validateEnv(raw: Record<string, unknown>): AppEnv {
     input.REFRESH_TOKEN_PEPPER ??= 'test-refresh-pepper-16';
     input.OTP_FIXED_CODE ??= '123456';
     input.REDIS_URL ??= '';
+    input.DOCUMENT_SIGNING_SECRET ??= 'test-document-signing-secret-at-least-32';
+    input.ADMIN_BOOTSTRAP_PASSWORD ??= 'AdminTest123!';
   }
 
   const result = envSchema.safeParse(input);

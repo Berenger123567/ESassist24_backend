@@ -85,11 +85,13 @@ export class RateLimitService implements OnModuleDestroy {
   private redis: Redis | null = null;
   private readonly phoneLimit: number;
   private readonly ipLimit: number;
+  private readonly deviceLimit: number;
   private readonly windowSeconds = 3600;
 
   constructor(private readonly config: ConfigService) {
     this.phoneLimit = this.config.get<number>('OTP_MAX_PER_PHONE_PER_HOUR', 5);
     this.ipLimit = this.config.get<number>('OTP_MAX_PER_IP_PER_HOUR', 10);
+    this.deviceLimit = this.config.get<number>('OTP_MAX_PER_DEVICE_PER_HOUR', 5);
 
     const redisUrl = this.config.get<string>('REDIS_URL');
     if (redisUrl && this.config.get<string>('NODE_ENV') !== 'test') {
@@ -110,7 +112,7 @@ export class RateLimitService implements OnModuleDestroy {
     return this.config.get<number>('OTP_REQUEST_COOLDOWN_SECONDS', 60);
   }
 
-  async assertOtpRequestAllowed(phone: string, ip?: string): Promise<void> {
+  async assertOtpRequestAllowed(phone: string, ip?: string, deviceId?: string): Promise<void> {
     const cooldown = await this.run((store) =>
       store.acquireCooldown(`otp:cooldown:${phone}`, this.cooldownSeconds),
     );
@@ -131,6 +133,15 @@ export class RateLimitService implements OnModuleDestroy {
       );
       if (ipCounter.count > this.ipLimit) {
         throw this.rateLimited(ipCounter.retryAfterSeconds);
+      }
+    }
+
+    if (deviceId) {
+      const deviceCounter = await this.run((store) =>
+        store.increment(`otp:device:${deviceId}`, this.windowSeconds),
+      );
+      if (deviceCounter.count > this.deviceLimit) {
+        throw this.rateLimited(deviceCounter.retryAfterSeconds);
       }
     }
   }

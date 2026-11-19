@@ -1,13 +1,13 @@
-﻿import { Inject, Injectable } from '@nestjs/common';
+﻿import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Prisma, RoleCode, ClientPlatform } from '@prisma/client';
+import { Prisma, RoleCode, ClientPlatform, OtpChannel } from '@prisma/client';
 import { hash as hashSecret, verify as verifySecret } from '@node-rs/argon2';
 import { createHmac, randomBytes, randomInt, randomUUID } from 'node:crypto';
 import { ApiError } from '../../common/errors/api-error';
 import { ERROR_CODES } from '../../common/errors/error-codes';
 import { PrismaService } from '../../prisma/prisma.service';
-import { OTP_SENDER, OtpSender } from './otp.sender';
+import { OtpDeliveryService } from './otp-delivery.service';
 import { normalizePhone } from './phone.util';
 import { RateLimitService } from './rate-limit.service';
 import { AuthTokensDto } from './dto/auth.dto';
@@ -42,7 +42,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     private readonly rateLimit: RateLimitService,
-    @Inject(OTP_SENDER) private readonly otpSender: OtpSender,
+    private readonly otpDelivery: OtpDeliveryService,
   ) {
     this.nodeEnv = this.config.get<string>('NODE_ENV', 'development');
     this.accessTtlSeconds = this.config.get<number>('JWT_ACCESS_TTL_SECONDS', 900);
@@ -60,9 +60,10 @@ export class AuthService {
   async requestOtp(
     rawPhone: string,
     meta: RequestMeta,
+    channel: OtpChannel = OtpChannel.SMS,
   ): Promise<{ retryAfterSeconds: number; resendAfterSeconds: number; expiresInSeconds: number }> {
     const phone = this.normalize(rawPhone);
-    await this.rateLimit.assertOtpRequestAllowed(phone, meta.ip);
+    await this.rateLimit.assertOtpRequestAllowed(phone, meta.ip, meta.clientDeviceId);
 
     const code = this.resolveCode(phone);
     const codeHash = await hashSecret(code);
@@ -82,11 +83,12 @@ export class AuthService {
           ip: meta.ip,
           userAgent: meta.userAgent,
           clientPlatform: meta.clientPlatform ?? ClientPlatform.UNKNOWN,
+          clientDeviceId: meta.clientDeviceId,
         },
       });
     });
 
-    await this.otpSender.send(phone, code);
+    await this.otpDelivery.enqueue(phone, channel, code);
 
     return {
       retryAfterSeconds: this.rateLimit.cooldownSeconds,
@@ -243,6 +245,24 @@ export class AuthService {
       where: { id: sessionId, revokedAt: null },
       data: { revokedAt: new Date() },
     });
+  }
+
+  async issueSessionForUser(
+    userId: string,
+    meta: RequestMeta,
+  ): Promise<AuthTokensDto & { isNewUser: boolean }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { roles: { include: { role: true } } },
+    });
+
+    if (!user || user.deletedAt) {
+      throw new ApiError(ERROR_CODES.UNAUTHORIZED, 401, 'Compte indisponible.');
+    }
+
+    const roles = user.roles.map((userRole) => userRole.role.code);
+    const tokens = await this.issueSession(user.id, roles, meta);
+    return { ...tokens, isNewUser: false };
   }
 
   private async issueSession(
