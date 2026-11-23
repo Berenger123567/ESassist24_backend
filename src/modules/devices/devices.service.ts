@@ -62,6 +62,15 @@ export class DevicesService {
     return this.toResponse(device);
   }
 
+  listActive(userId: string): Promise<DeviceResponseDto[]> {
+    return this.prisma.device
+      .findMany({
+        where: { userId, revokedAt: null },
+        orderBy: { lastSeenAt: 'desc' },
+      })
+      .then((devices) => devices.map((device) => this.toResponse(device)));
+  }
+
   async revoke(userId: string, deviceId: string): Promise<void> {
     const device = await this.prisma.device.findFirst({
       where: { id: deviceId, userId, revokedAt: null },

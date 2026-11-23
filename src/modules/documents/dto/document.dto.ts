@@ -71,19 +71,19 @@ export class DocumentDto {
   @ApiProperty()
   contentType: string;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, nullable: true })
   detectedContentType: string | null;
 
   @ApiProperty()
   sizeBytes: number;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, nullable: true })
   sha256: string | null;
 
-  @ApiPropertyOptional({ format: 'date-time', nullable: true })
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   uploadedAt: Date | null;
 
-  @ApiPropertyOptional({ format: 'date-time', nullable: true })
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   expiresAt: Date | null;
 
   @ApiProperty({ format: 'date-time' })
@@ -103,10 +103,10 @@ export class DocumentEventDto {
   @ApiProperty({ enum: DocumentEventType })
   type: DocumentEventType;
 
-  @ApiPropertyOptional({ format: 'uuid', nullable: true })
+  @ApiPropertyOptional({ type: String, format: 'uuid', nullable: true })
   actorId: string | null;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: Object, additionalProperties: true, nullable: true })
   metadata: unknown;
 
   @ApiProperty({ format: 'date-time' })
@@ -124,5 +124,19 @@ export class DocumentDownloadUrlResponseDto {
   method: 'GET';
 
   @ApiProperty({ example: 600 })
+  expiresInSeconds: number;
+}
+
+export class DocumentViewUrlResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  documentId: string;
+
+  @ApiProperty({ example: '/api/v1/admin/documents/view/eyJwdXJwb3NlIjoi.view.signature' })
+  viewUrl: string;
+
+  @ApiProperty({ example: 'GET' })
+  method: 'GET';
+
+  @ApiProperty({ example: 300 })
   expiresInSeconds: number;
 }

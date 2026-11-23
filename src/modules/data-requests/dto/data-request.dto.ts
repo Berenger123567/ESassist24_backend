@@ -53,16 +53,16 @@ export class DataRequestResponseDto {
   @ApiProperty({ enum: DataRequestStatus, enumName: 'DataRequestStatus' })
   status: DataRequestStatus;
 
-  @ApiPropertyOptional({ nullable: true, maxLength: 2000 })
+  @ApiPropertyOptional({ type: String, nullable: true, maxLength: 2000 })
   details: string | null;
 
-  @ApiPropertyOptional({ nullable: true, maxLength: 2000 })
+  @ApiPropertyOptional({ type: String, nullable: true, maxLength: 2000 })
   resolutionNote: string | null;
 
   @ApiProperty({ format: 'date-time' })
   requestedAt: Date;
 
-  @ApiPropertyOptional({ format: 'date-time', nullable: true })
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   resolvedAt: Date | null;
 }
 

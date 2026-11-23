@@ -14,16 +14,16 @@ export class NotificationResponseDto {
   @ApiProperty()
   body: string;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, nullable: true })
   entityId: string | null;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, nullable: true })
   route: string | null;
 
   @ApiProperty({ enum: NotificationStatus })
   status: NotificationStatus;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   readAt: Date | null;
 
   @ApiProperty()
@@ -34,6 +34,6 @@ export class NotificationPageDto {
   @ApiProperty({ type: [NotificationResponseDto] })
   data: NotificationResponseDto[];
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, nullable: true })
   nextCursor: string | null;
 }

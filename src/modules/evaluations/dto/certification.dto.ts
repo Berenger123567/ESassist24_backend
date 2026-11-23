@@ -35,10 +35,10 @@ export class CertificationSummaryDto {
   @ApiProperty({ example: 'CERTIFIED' })
   status: string;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, nullable: true })
   label: string | null;
 
-  @ApiPropertyOptional({ format: 'date-time', nullable: true })
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   certifiedAt: Date | null;
 
   @ApiProperty({ example: false })
@@ -49,13 +49,13 @@ export class CertificationResponseDto {
   @ApiProperty({ example: 'CERTIFIED' })
   status: string;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, nullable: true })
   label: string | null;
 
   @ApiProperty({ example: false })
   isDiploma: boolean;
 
-  @ApiPropertyOptional({ format: 'date-time', nullable: true })
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   certifiedAt: Date | null;
 
   @ApiPropertyOptional({ type: CertificationBadgeDto, nullable: true })

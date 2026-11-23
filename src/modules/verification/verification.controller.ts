@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  Headers,
   HttpCode,
   Param,
   Post,
@@ -56,15 +55,16 @@ export class VerificationController {
   @ApiOperation({
     summary: 'Rendre une décision de vérification (idempotente via Idempotency-Key)',
   })
-  @ApiHeader({ name: 'Idempotency-Key', required: true })
+  @ApiHeader({ name: 'idempotency-key', required: true })
   @ApiOkResponse({ type: VerificationDecisionResponseDto })
   decide(
     @CurrentUser() admin: AuthUser,
     @Param('id') id: string,
     @Body() dto: VerificationDecisionDto,
-    @Headers('idempotency-key') key: string,
     @Req() request: ContextualRequest,
   ): Promise<VerificationDecisionResponseDto> {
+    const headerValue = request.headers['idempotency-key'];
+    const key = Array.isArray(headerValue) ? headerValue[0] : headerValue;
     if (!key || key.trim().length < 8 || key.length > 200) {
       throw new ApiError(
         ERROR_CODES.VALIDATION_ERROR,

@@ -135,7 +135,7 @@ export class EvaluationCriterionResponseDto {
   @ApiProperty({ example: 'Sécurité électrique' })
   label: string;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, nullable: true })
   description: string | null;
 
   @ApiProperty({ example: 30 })
@@ -164,7 +164,7 @@ export class EvaluationGridResponseDto {
   @ApiProperty({ example: 'Grille électricité bâtiment' })
   label: string;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, nullable: true })
   description: string | null;
 
   @ApiProperty({ example: 1 })

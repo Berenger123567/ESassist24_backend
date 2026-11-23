@@ -36,23 +36,7 @@
         "operationId": "AuthController_requestOtp",
         "parameters": [
           {
-            "name": "user-agent",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "x-client-platform",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "X-Client-Platform",
             "in": "header",
             "required": false,
             "schema": {
@@ -163,31 +147,7 @@
         "operationId": "AuthController_verifyOtp",
         "parameters": [
           {
-            "name": "user-agent",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "x-client-platform",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "x-device-id",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "X-Device-Id",
             "in": "header",
             "required": false,
             "schema": {
@@ -195,7 +155,7 @@
             }
           },
           {
-            "name": "X-Client-Platform",
+            "name": "x-device-id",
             "in": "header",
             "required": false,
             "schema": {
@@ -306,39 +266,7 @@
         "operationId": "AuthController_refresh",
         "parameters": [
           {
-            "name": "user-agent",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "x-client-platform",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "x-device-id",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "x-csrf-token",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "X-CSRF-Token",
             "in": "header",
             "required": false,
             "schema": {
@@ -346,7 +274,15 @@
             }
           },
           {
-            "name": "X-Client-Platform",
+            "name": "x-device-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
             "in": "header",
             "required": false,
             "schema": {
@@ -555,31 +491,7 @@
         "operationId": "AdminController_login",
         "parameters": [
           {
-            "name": "user-agent",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "x-client-platform",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "x-device-id",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "X-Device-Id",
             "in": "header",
             "required": false,
             "schema": {
@@ -587,7 +499,7 @@
             }
           },
           {
-            "name": "X-Client-Platform",
+            "name": "x-device-id",
             "in": "header",
             "required": false,
             "schema": {
@@ -611,7 +523,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AdminSessionResponseDto"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/AdminMfaChallengeResponseDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AdminSessionResponseDto"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "mfaRequired"
+                  }
                 }
               }
             }
@@ -706,31 +628,7 @@
         "operationId": "AdminController_verifyTotp",
         "parameters": [
           {
-            "name": "user-agent",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "x-client-platform",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "x-device-id",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "X-Device-Id",
             "in": "header",
             "required": false,
             "schema": {
@@ -738,7 +636,7 @@
             }
           },
           {
-            "name": "X-Client-Platform",
+            "name": "x-device-id",
             "in": "header",
             "required": false,
             "schema": {
@@ -1258,6 +1156,232 @@
         "summary": "Lister les invitations administrateur",
         "tags": [
           "Administration"
+        ]
+      }
+    },
+    "/api/v1/admin/evaluators": {
+      "post": {
+        "deprecated": true,
+        "description": "Alias déprécié, utiliser POST /api/v1/admin/invitations avec role=EVALUATOR.",
+        "operationId": "AdminController_createEvaluator",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEvaluatorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedAdminInvitationResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Créer une invitation d’évaluateur (alias)",
+        "tags": [
+          "Administration"
+        ]
+      },
+      "get": {
+        "operationId": "AdminEvaluationsController_listEvaluators",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "example": "Dossou",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 50,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluatorPageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lister les évaluateurs et leur charge",
+        "tags": [
+          "Évaluation - administration"
         ]
       }
     },
@@ -2137,6 +2261,7 @@
     "/api/v1/me/professional-profile": {
       "get": {
         "deprecated": true,
+        "description": "Route de compatibilité, utiliser GET /api/v1/pro/profile.",
         "operationId": "ProfilesController_getProfessionalProfile",
         "parameters": [],
         "responses": {
@@ -2233,6 +2358,7 @@
       },
       "put": {
         "deprecated": true,
+        "description": "Route de compatibilité, utiliser PUT /api/v1/pro/profile.",
         "operationId": "ProfilesController_updateProfessionalProfile",
         "parameters": [],
         "requestBody": {
@@ -2341,6 +2467,7 @@
     "/api/v1/professionals/me": {
       "get": {
         "deprecated": true,
+        "description": "Alias déprécié, utiliser GET /api/v1/pro/profile.",
         "operationId": "ProfilesController_getProfessionalProfileSpec",
         "parameters": [],
         "responses": {
@@ -2437,6 +2564,7 @@
       },
       "patch": {
         "deprecated": true,
+        "description": "Alias déprécié, utiliser PUT /api/v1/pro/profile.",
         "operationId": "ProfilesController_updateProfessionalProfileSpec",
         "parameters": [],
         "requestBody": {
@@ -4033,6 +4161,106 @@
       }
     },
     "/api/v1/devices": {
+      "get": {
+        "deprecated": true,
+        "description": "Alias de compatibilité, utiliser POST /api/v1/devices pour enregistrer un appareil.",
+        "operationId": "DevicesController_listActive",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lister mes appareils actifs",
+        "tags": [
+          "Appareils"
+        ]
+      },
       "post": {
         "operationId": "DevicesController_register",
         "parameters": [],
@@ -4467,6 +4695,112 @@
         "tags": [
           "Notifications"
         ]
+      },
+      "post": {
+        "deprecated": true,
+        "description": "Alias déprécié, utiliser PATCH /api/v1/notifications/{id}/read.",
+        "operationId": "NotificationsController_markReadAlias",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Marquer une notification comme lue (alias)",
+        "tags": [
+          "Notifications"
+        ]
       }
     },
     "/api/v1/admin/verifications": {
@@ -4736,14 +5070,6 @@
           },
           {
             "name": "idempotency-key",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
             "in": "header",
             "required": true,
             "schema": {
@@ -4972,23 +5298,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "documentId": {
-                      "type": "string"
-                    },
-                    "viewUrl": {
-                      "type": "string"
-                    },
-                    "method": {
-                      "type": "string",
-                      "example": "GET"
-                    },
-                    "expiresInSeconds": {
-                      "type": "number",
-                      "example": 300
-                    }
-                  }
+                  "$ref": "#/components/schemas/DocumentViewUrlResponseDto"
                 }
               }
             }
@@ -5495,6 +5805,112 @@
         "tags": [
           "Évaluation - grilles"
         ]
+      },
+      "delete": {
+        "deprecated": true,
+        "description": "Alias déprécié de la mise à jour PATCH avec active=false.",
+        "operationId": "AdminEvaluationGridsController_deactivate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluationGridResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Désactiver une grille d’évaluation (alias)",
+        "tags": [
+          "Évaluation - grilles"
+        ]
       }
     },
     "/api/v1/admin/evaluation-grids/{id}/criteria": {
@@ -5610,125 +6026,6 @@
         "summary": "Remplacer les critères d’une grille (poids total 100)",
         "tags": [
           "Évaluation - grilles"
-        ]
-      }
-    },
-    "/api/v1/admin/evaluators": {
-      "get": {
-        "operationId": "AdminEvaluationsController_listEvaluators",
-        "parameters": [
-          {
-            "name": "search",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "maxLength": 100,
-              "example": "Dossou",
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "example": 50,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EvaluatorPageDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Lister les évaluateurs et leur charge",
-        "tags": [
-          "Évaluation - administration"
         ]
       }
     },
@@ -6345,6 +6642,122 @@
         "tags": [
           "Évaluation - évaluateur"
         ]
+      },
+      "patch": {
+        "deprecated": true,
+        "description": "Alias déprécié, utiliser PUT /api/v1/evaluator/assignments/{id}/results.",
+        "operationId": "EvaluatorEvaluationsController_patchResults",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveEvaluationResultsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluationResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Enregistrer les notes d’une évaluation (alias)",
+        "tags": [
+          "Évaluation - évaluateur"
+        ]
       }
     },
     "/api/v1/evaluator/assignments/{id}/results": {
@@ -6664,13 +7077,110 @@
         "tags": [
           "Certification"
         ]
+      },
+      "post": {
+        "deprecated": true,
+        "description": "Alias déprécié, utiliser GET /api/v1/pro/certification.",
+        "operationId": "ProCertificationController_getAlias",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificationResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Badge de certification du professionnel connecté (alias)",
+        "tags": [
+          "Certification"
+        ]
       }
     }
   },
   "info": {
     "title": "ÉLECTRO ASSIST 24H — API",
     "description": "API de confiance, vérification et sécurité pour la mise en relation entre clients et électriciens au Bénin.",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "contact": {}
   },
   "tags": [],
@@ -6689,12 +7199,75 @@
       }
     },
     "schemas": {
+      "ErrorCode": {
+        "type": "string",
+        "enum": [
+          "VALIDATION_ERROR",
+          "UNAUTHORIZED",
+          "FORBIDDEN",
+          "NOT_FOUND",
+          "CONFLICT",
+          "RATE_LIMITED",
+          "INTERNAL_ERROR",
+          "OTP_INVALID",
+          "OTP_EXPIRED",
+          "OTP_RATE_LIMITED",
+          "AUTH_REFRESH_INVALID",
+          "AUTH_SESSION_REVOKED",
+          "AUTH_CSRF_INVALID",
+          "ACCOUNT_SUSPENDED",
+          "ACCOUNT_DELETED",
+          "SPECIALTY_NOT_FOUND",
+          "ZONE_NOT_FOUND",
+          "DOCUMENT_NOT_OWNED",
+          "PROFESSIONAL_PROFILE_NOT_FOUND",
+          "INVALID_STATUS_TRANSITION",
+          "APP_VERSION_TOO_OLD",
+          "AUTH_INVALID_CREDENTIALS",
+          "AUTH_MFA_INVALID",
+          "AUTH_MFA_EXPIRED",
+          "AUTH_ACCOUNT_LOCKED",
+          "ADMIN_INVITATION_INVALID",
+          "ADMIN_INVITATION_EXPIRED",
+          "ADMIN_INVITATION_ALREADY_USED",
+          "PASSWORD_WEAK",
+          "DATA_REQUEST_NOT_FOUND",
+          "DOCUMENT_NOT_FOUND",
+          "DOCUMENT_NOT_READY",
+          "DOCUMENT_INVALID_MIME",
+          "DOCUMENT_TOO_LARGE",
+          "DOCUMENT_SIGNATURE_INVALID",
+          "DOCUMENT_URL_EXPIRED",
+          "DOCUMENT_NOT_AVAILABLE",
+          "IP_NOT_ALLOWED",
+          "IDEMPOTENCY_CONFLICT",
+          "VERIFICATION_CONFLICT",
+          "EVALUATION_GRID_NOT_FOUND",
+          "EVALUATION_GRID_LOCKED",
+          "EVALUATION_GRID_INACTIVE",
+          "EVALUATION_GRID_CRITERIA_INVALID",
+          "EVALUATION_ASSIGNMENT_NOT_FOUND",
+          "EVALUATION_ALREADY_ASSIGNED",
+          "EVALUATION_NOT_ASSIGNED_TO_EVALUATOR",
+          "EVALUATION_ALREADY_SUBMITTED",
+          "EVALUATION_INCOMPLETE",
+          "EVALUATION_SCORE_INVALID",
+          "EVALUATION_PROFILE_NOT_VERIFIED",
+          "EVALUATION_DUE_DATE_INVALID",
+          "EVALUATOR_NOT_FOUND",
+          "CERTIFICATION_NOT_ELIGIBLE"
+        ]
+      },
       "ErrorBodyDto": {
         "type": "object",
         "properties": {
           "code": {
-            "type": "string",
-            "example": "VALIDATION_ERROR"
+            "example": "VALIDATION_ERROR",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ErrorCode"
+              }
+            ]
           },
           "message": {
             "type": "string",
@@ -6854,25 +7427,22 @@
           }
         }
       },
-      "AdminLoginDto": {
+      "AdminMfaChallengeResponseDto": {
         "type": "object",
         "properties": {
-          "phone": {
-            "type": "string",
-            "example": "+22997000000"
+          "mfaRequired": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
           },
-          "password": {
-            "type": "string",
-            "example": "AdminTest123!"
-          },
-          "deviceId": {
-            "type": "string",
-            "description": "Identifiant appareil (mobile/web)"
+          "mfaToken": {
+            "type": "string"
           }
         },
         "required": [
-          "phone",
-          "password"
+          "mfaRequired",
+          "mfaToken"
         ]
       },
       "AdminSessionResponseDto": {
@@ -6903,7 +7473,9 @@
           },
           "mfaRequired": {
             "type": "boolean",
-            "example": false
+            "enum": [
+              false
+            ]
           }
         },
         "required": [
@@ -6911,6 +7483,27 @@
           "expiresIn",
           "user",
           "mfaRequired"
+        ]
+      },
+      "AdminLoginDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "example": "+22997000000"
+          },
+          "password": {
+            "type": "string",
+            "example": "AdminTest123!"
+          },
+          "deviceId": {
+            "type": "string",
+            "description": "Identifiant appareil (mobile/web)"
+          }
+        },
+        "required": [
+          "phone",
+          "password"
         ]
       },
       "AdminMfaVerifyDto": {
@@ -7014,7 +7607,7 @@
             "example": "+22997000000"
           },
           "email": {
-            "type": "object",
+            "type": "string",
             "nullable": true,
             "format": "email"
           },
@@ -7034,17 +7627,17 @@
             "type": "string"
           },
           "acceptedAt": {
-            "type": "object",
+            "type": "string",
             "nullable": true,
             "format": "date-time"
           },
           "revokedAt": {
-            "type": "object",
+            "type": "string",
             "nullable": true,
             "format": "date-time"
           },
           "invitedByUserId": {
-            "type": "object",
+            "type": "string",
             "nullable": true,
             "format": "uuid"
           },
@@ -7084,7 +7677,7 @@
             "example": "+22997000000"
           },
           "email": {
-            "type": "object",
+            "type": "string",
             "nullable": true,
             "format": "email"
           },
@@ -7104,17 +7697,17 @@
             "type": "string"
           },
           "acceptedAt": {
-            "type": "object",
+            "type": "string",
             "nullable": true,
             "format": "date-time"
           },
           "revokedAt": {
-            "type": "object",
+            "type": "string",
             "nullable": true,
             "format": "date-time"
           },
           "invitedByUserId": {
-            "type": "object",
+            "type": "string",
             "nullable": true,
             "format": "uuid"
           },
@@ -7130,6 +7723,22 @@
           "status",
           "expiresAt",
           "createdAt"
+        ]
+      },
+      "CreateEvaluatorDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "example": "+22997000000"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          }
+        },
+        "required": [
+          "phone"
         ]
       },
       "AcceptAdminInvitationDto": {
@@ -7197,38 +7806,40 @@
             "type": "string"
           },
           "actorId": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "actorRole": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "action": {
             "type": "string"
           },
           "targetType": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "targetId": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "before": {
             "type": "object",
+            "additionalProperties": true,
             "nullable": true
           },
           "after": {
             "type": "object",
+            "additionalProperties": true,
             "nullable": true
           },
           "ip": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "requestId": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "result": {
@@ -7239,7 +7850,7 @@
             ]
           },
           "reason": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "createdAt": {
@@ -7264,7 +7875,7 @@
             }
           },
           "nextCursor": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           }
         },
@@ -7311,11 +7922,11 @@
             "example": "+22997000000"
           },
           "firstName": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "lastName": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "status": {
@@ -7323,7 +7934,7 @@
             "example": "ACTIVE"
           },
           "photoDocumentId": {
-            "type": "object",
+            "type": "string",
             "format": "uuid",
             "nullable": true
           },
@@ -7399,11 +8010,11 @@
             "example": "CERTIFIED"
           },
           "label": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "certifiedAt": {
-            "type": "object",
+            "type": "string",
             "format": "date-time",
             "nullable": true
           },
@@ -7429,7 +8040,7 @@
             "example": "ID_CARD"
           },
           "expiresAt": {
-            "type": "object",
+            "type": "string",
             "format": "date-time",
             "nullable": true
           }
@@ -7489,7 +8100,7 @@
             "example": 8
           },
           "bio": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "submittedAt": {
@@ -7497,21 +8108,21 @@
             "type": "string"
           },
           "decidedAt": {
-            "type": "object",
+            "type": "string",
             "format": "date-time",
             "nullable": true
           },
           "decisionReason": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "complementRequestedAt": {
-            "type": "object",
+            "type": "string",
             "format": "date-time",
             "nullable": true
           },
           "complementDueAt": {
-            "type": "object",
+            "type": "string",
             "format": "date-time",
             "nullable": true
           },
@@ -7633,7 +8244,7 @@
             }
           },
           "nextCursor": {
-            "type": "object",
+            "type": "string",
             "nullable": true,
             "example": null
           }
@@ -7684,7 +8295,7 @@
             }
           },
           "nextCursor": {
-            "type": "object",
+            "type": "string",
             "nullable": true,
             "example": null
           }
@@ -7730,7 +8341,7 @@
             }
           },
           "nextCursor": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           }
         },
@@ -7802,12 +8413,12 @@
             ]
           },
           "details": {
-            "type": "object",
+            "type": "string",
             "nullable": true,
             "maxLength": 2000
           },
           "resolutionNote": {
-            "type": "object",
+            "type": "string",
             "nullable": true,
             "maxLength": 2000
           },
@@ -7816,7 +8427,7 @@
             "type": "string"
           },
           "resolvedAt": {
-            "type": "object",
+            "type": "string",
             "format": "date-time",
             "nullable": true
           }
@@ -7855,12 +8466,12 @@
             ]
           },
           "details": {
-            "type": "object",
+            "type": "string",
             "nullable": true,
             "maxLength": 2000
           },
           "resolutionNote": {
-            "type": "object",
+            "type": "string",
             "nullable": true,
             "maxLength": 2000
           },
@@ -7869,7 +8480,7 @@
             "type": "string"
           },
           "resolvedAt": {
-            "type": "object",
+            "type": "string",
             "format": "date-time",
             "nullable": true
           },
@@ -8052,23 +8663,23 @@
             "type": "string"
           },
           "detectedContentType": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "sizeBytes": {
             "type": "number"
           },
           "sha256": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "uploadedAt": {
-            "type": "object",
+            "type": "string",
             "format": "date-time",
             "nullable": true
           },
           "expiresAt": {
-            "type": "object",
+            "type": "string",
             "format": "date-time",
             "nullable": true
           },
@@ -8143,12 +8754,13 @@
             ]
           },
           "actorId": {
-            "type": "object",
+            "type": "string",
             "format": "uuid",
             "nullable": true
           },
           "metadata": {
             "type": "object",
+            "additionalProperties": true,
             "nullable": true
           },
           "createdAt": {
@@ -8161,52 +8773,6 @@
           "documentId",
           "type",
           "createdAt"
-        ]
-      },
-      "RegisterDeviceDto": {
-        "type": "object",
-        "properties": {
-          "deviceId": {
-            "type": "string"
-          },
-          "platform": {
-            "type": "string",
-            "enum": [
-              "WEB",
-              "ANDROID",
-              "IOS"
-            ]
-          },
-          "pushProvider": {
-            "type": "string",
-            "enum": [
-              "FCM",
-              "WEB_PUSH",
-              "EXPO"
-            ]
-          },
-          "pushToken": {
-            "type": "string"
-          },
-          "pushSubscription": {
-            "type": "object"
-          },
-          "appVersion": {
-            "type": "string"
-          },
-          "osVersion": {
-            "type": "string"
-          },
-          "locale": {
-            "type": "string"
-          },
-          "notificationsEnabled": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "deviceId",
-          "platform"
         ]
       },
       "DeviceResponseDto": {
@@ -8265,6 +8831,52 @@
           "createdAt"
         ]
       },
+      "RegisterDeviceDto": {
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "WEB",
+              "ANDROID",
+              "IOS"
+            ]
+          },
+          "pushProvider": {
+            "type": "string",
+            "enum": [
+              "FCM",
+              "WEB_PUSH",
+              "EXPO"
+            ]
+          },
+          "pushToken": {
+            "type": "string"
+          },
+          "pushSubscription": {
+            "type": "object"
+          },
+          "appVersion": {
+            "type": "string"
+          },
+          "osVersion": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "notificationsEnabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "deviceId",
+          "platform"
+        ]
+      },
       "NotificationResponseDto": {
         "type": "object",
         "properties": {
@@ -8292,11 +8904,11 @@
             "type": "string"
           },
           "entityId": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "route": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "status": {
@@ -8309,7 +8921,8 @@
             ]
           },
           "readAt": {
-            "type": "object",
+            "type": "string",
+            "format": "date-time",
             "nullable": true
           },
           "createdAt": {
@@ -8336,7 +8949,7 @@
             }
           },
           "nextCursor": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           }
         },
@@ -8367,11 +8980,13 @@
             "type": "string"
           },
           "uploadedAt": {
-            "type": "object",
+            "type": "string",
+            "format": "date-time",
             "nullable": true
           },
           "expiresAt": {
-            "type": "object",
+            "type": "string",
+            "format": "date-time",
             "nullable": true
           }
         },
@@ -8461,7 +9076,7 @@
             }
           },
           "nextCursor": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           }
         },
@@ -8524,34 +9139,37 @@
             }
           },
           "firstName": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "lastName": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "experienceYears": {
             "type": "number"
           },
           "bio": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "decidedAt": {
-            "type": "object",
+            "type": "string",
+            "format": "date-time",
             "nullable": true
           },
           "decisionReason": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "complementRequestedAt": {
-            "type": "object",
+            "type": "string",
+            "format": "date-time",
             "nullable": true
           },
           "complementDueAt": {
-            "type": "object",
+            "type": "string",
+            "format": "date-time",
             "nullable": true
           }
         },
@@ -8640,7 +9258,8 @@
             ]
           },
           "complementDueAt": {
-            "type": "object",
+            "type": "string",
+            "format": "date-time",
             "nullable": true
           },
           "replayed": {
@@ -8653,6 +9272,33 @@
           "decision",
           "profileStatus",
           "replayed"
+        ]
+      },
+      "DocumentViewUrlResponseDto": {
+        "type": "object",
+        "properties": {
+          "documentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "viewUrl": {
+            "type": "string",
+            "example": "/api/v1/admin/documents/view/eyJwdXJwb3NlIjoi.view.signature"
+          },
+          "method": {
+            "type": "string",
+            "example": "GET"
+          },
+          "expiresInSeconds": {
+            "type": "number",
+            "example": 300
+          }
+        },
+        "required": [
+          "documentId",
+          "viewUrl",
+          "method",
+          "expiresInSeconds"
         ]
       },
       "EvaluationCriterionResponseDto": {
@@ -8671,7 +9317,7 @@
             "example": "Sécurité électrique"
           },
           "description": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "weight": {
@@ -8722,7 +9368,7 @@
             "example": "Grille électricité bâtiment"
           },
           "description": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "version": {
@@ -8894,11 +9540,11 @@
             "example": "+22900000000"
           },
           "firstName": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "lastName": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "activeAssignments": {
@@ -8992,11 +9638,11 @@
             "example": "+22900000000"
           },
           "firstName": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "lastName": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           }
         },
@@ -9033,7 +9679,7 @@
             "example": 30
           },
           "comment": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "updatedAt": {
@@ -9094,16 +9740,16 @@
             ]
           },
           "dueAt": {
-            "type": "object",
+            "type": "string",
             "format": "date-time",
             "nullable": true
           },
           "notes": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "submittedAt": {
-            "type": "object",
+            "type": "string",
             "format": "date-time",
             "nullable": true
           },
@@ -9168,7 +9814,7 @@
             }
           },
           "nextCursor": {
-            "type": "object",
+            "type": "string",
             "format": "uuid",
             "nullable": true
           }
@@ -9244,6 +9890,86 @@
           "results"
         ]
       },
+      "EvaluationResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ASSIGNED",
+              "IN_PROGRESS",
+              "SUBMITTED"
+            ]
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "grid": {
+            "$ref": "#/components/schemas/EvaluationGridSummaryDto"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/EvaluationProfileSummaryDto"
+          },
+          "evaluator": {
+            "$ref": "#/components/schemas/EvaluationEvaluatorSummaryDto"
+          },
+          "criteria": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EvaluationCriterionResponseDto"
+            }
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EvaluationResultResponseDto"
+            }
+          },
+          "submission": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EvaluationSubmissionResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "createdAt",
+          "updatedAt",
+          "grid",
+          "profile",
+          "evaluator",
+          "criteria",
+          "results"
+        ]
+      },
       "CertificationBadgeDto": {
         "type": "object",
         "properties": {
@@ -9311,7 +10037,7 @@
             "example": "CERTIFIED"
           },
           "label": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "isDiploma": {
@@ -9319,7 +10045,7 @@
             "example": false
           },
           "certifiedAt": {
-            "type": "object",
+            "type": "string",
             "format": "date-time",
             "nullable": true
           },
@@ -9348,5 +10074,6 @@
         ]
       }
     }
-  }
+  },
+  "x-contract-version": "1.0.0"
 }

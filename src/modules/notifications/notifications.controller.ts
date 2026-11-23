@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Patch, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, HttpCode, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiCommonErrors } from '../../common/decorators/api-common-errors.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -27,6 +27,18 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Marquer une notification comme lue' })
   @ApiOkResponse({ type: NotificationResponseDto })
   markRead(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.notificationsService.markRead(user.id, id);
+  }
+
+  @Post(':id/read')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Marquer une notification comme lue (alias)',
+    description: 'Alias déprécié, utiliser PATCH /api/v1/notifications/{id}/read.',
+    deprecated: true,
+  })
+  @ApiOkResponse({ type: NotificationResponseDto })
+  markReadAlias(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.notificationsService.markRead(user.id, id);
   }
 }

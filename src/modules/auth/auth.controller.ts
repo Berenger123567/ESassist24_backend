@@ -1,9 +1,8 @@
-﻿import { Body, Controller, Headers, HttpCode, Post, Req, Res, UseGuards } from '@nestjs/common';
+﻿import { Body, Controller, HttpCode, Post, Req, Res, UseGuards } from '@nestjs/common';
 import {
   ApiAcceptedResponse,
   ApiBearerAuth,
   ApiCookieAuth,
-  ApiHeader,
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
@@ -11,6 +10,7 @@ import {
 } from '@nestjs/swagger';
 import { ClientPlatform, OtpChannel } from '@prisma/client';
 import { Request, Response } from 'express';
+import { ApiClientHeaders } from '../../common/decorators/api-client-headers.decorator';
 import { ApiCommonErrors } from '../../common/decorators/api-common-errors.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ApiError } from '../../common/errors/api-error';
@@ -42,17 +42,17 @@ export class AuthController {
   @Post('otp/request')
   @HttpCode(202)
   @ApiOperation({ summary: 'Demander un code à usage unique' })
-  @ApiHeader({ name: 'X-Client-Platform', required: false })
+  @ApiClientHeaders()
   @ApiAcceptedResponse({ type: RequestOtpResponseDto })
-  requestOtp(
-    @Body() dto: RequestOtpDto,
-    @Req() request: Request,
-    @Headers('user-agent') userAgent?: string,
-    @Headers('x-client-platform') platform?: string,
-  ) {
+  requestOtp(@Body() dto: RequestOtpDto, @Req() request: Request) {
     return this.authService.requestOtp(
       dto.phone,
-      this.meta(request, userAgent, platform, dto.deviceId),
+      this.meta(
+        request,
+        this.header(request, 'user-agent'),
+        this.header(request, 'x-client-platform'),
+        dto.deviceId,
+      ),
       dto.channel ?? OtpChannel.SMS,
     );
   }
@@ -60,18 +60,19 @@ export class AuthController {
   @Post('otp/verify')
   @HttpCode(200)
   @ApiOperation({ summary: 'Vérifier le code et ouvrir une session' })
-  @ApiHeader({ name: 'X-Client-Platform', required: false })
-  @ApiHeader({ name: 'X-Device-Id', required: false })
+  @ApiClientHeaders({ deviceId: true })
   @ApiOkResponse({ type: AuthTokensDto })
   async verifyOtp(
     @Body() dto: VerifyOtpDto,
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
-    @Headers('user-agent') userAgent?: string,
-    @Headers('x-client-platform') platformHeader?: string,
-    @Headers('x-device-id') deviceId?: string,
   ) {
-    const meta = this.meta(request, userAgent, platformHeader, dto.deviceId ?? deviceId);
+    const meta = this.meta(
+      request,
+      this.header(request, 'user-agent'),
+      this.header(request, 'x-client-platform'),
+      dto.deviceId ?? this.header(request, 'x-device-id'),
+    );
     const tokens = await this.authService.verifyOtp(dto.phone, dto.code, meta);
     return this.applyWebSession(response, tokens, meta.clientPlatform);
   }
@@ -79,20 +80,21 @@ export class AuthController {
   @Post('refresh')
   @HttpCode(200)
   @ApiOperation({ summary: 'Renouveler la session avec rotation du jeton' })
-  @ApiHeader({ name: 'X-Client-Platform', required: false })
-  @ApiHeader({ name: 'X-CSRF-Token', required: false })
+  @ApiClientHeaders({ deviceId: true, csrf: true })
   @ApiCookieAuth()
   @ApiOkResponse({ type: AuthTokensDto })
   async refresh(
     @Body() dto: RefreshTokenDto,
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
-    @Headers('user-agent') userAgent?: string,
-    @Headers('x-client-platform') platformHeader?: string,
-    @Headers('x-device-id') deviceId?: string,
-    @Headers('x-csrf-token') csrfHeader?: string,
   ) {
-    const meta = this.meta(request, userAgent, platformHeader, dto.deviceId ?? deviceId);
+    const csrfHeader = this.header(request, 'x-csrf-token');
+    const meta = this.meta(
+      request,
+      this.header(request, 'user-agent'),
+      this.header(request, 'x-client-platform'),
+      dto.deviceId ?? this.header(request, 'x-device-id'),
+    );
     if (meta.clientPlatform === ClientPlatform.WEB) {
       this.csrfService.assertValid(csrfHeader, request.cookies?.[CSRF_COOKIE_NAME]);
     }
@@ -114,6 +116,11 @@ export class AuthController {
   ): Promise<void> {
     await this.authService.logout(user.sessionId);
     this.cookies.clear(response);
+  }
+
+  private header(request: Request, name: string): string | undefined {
+    const value = request.headers[name];
+    return Array.isArray(value) ? value[0] : value;
   }
 
   private meta(request: Request, userAgent?: string, platform?: string, deviceId?: string) {

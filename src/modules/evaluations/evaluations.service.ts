@@ -157,6 +157,35 @@ export class EvaluationsService {
     return this.toGridResponse(grid);
   }
 
+  async deactivateGrid(
+    admin: AuthUser,
+    id: string,
+    request: ContextualRequest,
+  ): Promise<EvaluationGridResponseDto> {
+    const existing = await this.findGrid(id);
+    const grid = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.evaluationGrid.update({
+        where: { id },
+        data: { active: false, version: { increment: 1 } },
+        include: { criteria: { orderBy: { sortOrder: 'asc' } } },
+      });
+      await this.audit.writeFromRequest(
+        request,
+        admin,
+        {
+          action: 'EVALUATION.GRID_DEACTIVATED',
+          targetType: 'EvaluationGrid',
+          targetId: id,
+          before: this.toGridResponse(existing),
+          after: this.toGridResponse(updated),
+        },
+        tx,
+      );
+      return updated;
+    });
+    return this.toGridResponse(grid);
+  }
+
   async replaceCriteria(
     admin: AuthUser,
     id: string,

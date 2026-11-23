@@ -14,7 +14,7 @@ export class VerificationDecisionResponseDto {
   @ApiProperty({ enum: ProfessionalStatus })
   profileStatus: ProfessionalStatus;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   complementDueAt: Date | null;
 
   @ApiProperty()

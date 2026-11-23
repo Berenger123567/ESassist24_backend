@@ -132,10 +132,10 @@ export class EvaluationEvaluatorSummaryDto {
   @ApiProperty({ example: '+22900000000' })
   phone: string;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, nullable: true })
   firstName: string | null;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, nullable: true })
   lastName: string | null;
 }
 
@@ -158,7 +158,7 @@ export class EvaluationResultResponseDto {
   @ApiProperty({ example: 30 })
   maxScore: number;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, nullable: true })
   comment: string | null;
 
   @ApiProperty({ format: 'date-time' })
@@ -186,13 +186,13 @@ export class EvaluationAssignmentResponseDto {
   @ApiProperty({ enum: EvaluationAssignmentStatus })
   status: EvaluationAssignmentStatus;
 
-  @ApiPropertyOptional({ format: 'date-time', nullable: true })
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   dueAt: Date | null;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, nullable: true })
   notes: string | null;
 
-  @ApiPropertyOptional({ format: 'date-time', nullable: true })
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   submittedAt: Date | null;
 
   @ApiProperty({ format: 'date-time' })
@@ -224,6 +224,6 @@ export class EvaluationAssignmentPageDto {
   @ApiProperty({ type: [EvaluationAssignmentResponseDto] })
   data: EvaluationAssignmentResponseDto[];
 
-  @ApiPropertyOptional({ format: 'uuid', nullable: true })
+  @ApiPropertyOptional({ type: String, format: 'uuid', nullable: true })
   nextCursor: string | null;
 }

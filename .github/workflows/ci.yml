@@ -89,3 +89,6 @@ jobs:
 
       - name: Vérifier OpenAPI à jour
         run: git diff --exit-code docs/openapi.json
+
+      - name: Vérifier le contrat OpenAPI
+        run: npm run openapi:check

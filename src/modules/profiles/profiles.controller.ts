@@ -53,6 +53,7 @@ export class ProfilesController {
   @Get('me/professional-profile')
   @ApiOperation({
     summary: 'Profil professionnel et spécialités déclarées (compat)',
+    description: 'Route de compatibilité, utiliser GET /api/v1/pro/profile.',
     deprecated: true,
   })
   @ApiOkResponse({ type: ProfessionalProfileResponseDto })
@@ -63,6 +64,7 @@ export class ProfilesController {
   @Put('me/professional-profile')
   @ApiOperation({
     summary: 'Créer ou mettre à jour le profil professionnel (compat)',
+    description: 'Route de compatibilité, utiliser PUT /api/v1/pro/profile.',
     deprecated: true,
   })
   @ApiOkResponse({ type: ProfessionalProfileResponseDto })
@@ -74,7 +76,11 @@ export class ProfilesController {
   }
 
   @Get('professionals/me')
-  @ApiOperation({ summary: 'Profil professionnel (alias spec 8.2)', deprecated: true })
+  @ApiOperation({
+    summary: 'Profil professionnel (alias spec 8.2)',
+    description: 'Alias déprécié, utiliser GET /api/v1/pro/profile.',
+    deprecated: true,
+  })
   @ApiOkResponse({ type: ProfessionalProfileResponseDto })
   getProfessionalProfileSpec(@CurrentUser() user: AuthUser) {
     return this.profilesService.getProfessionalProfile(user.id);
@@ -83,6 +89,7 @@ export class ProfilesController {
   @Patch('professionals/me')
   @ApiOperation({
     summary: 'Créer ou mettre à jour le profil professionnel (alias spec 8.2)',
+    description: 'Alias déprécié, utiliser PUT /api/v1/pro/profile.',
     deprecated: true,
   })
   @ApiOkResponse({ type: ProfessionalProfileResponseDto })

@@ -41,6 +41,7 @@ const envSchema = z
     DOCUMENT_EXPIRY_DAYS: z.coerce.number().int().min(1).default(365),
     DOCUMENT_SIGNED_URL_TTL_SECONDS: z.coerce.number().int().min(30).default(600),
     APP_VERSION: z.string().min(1).default('0.1.0'),
+    CONTRAT_VERSION: z.string().min(1).default('1.0.0'),
 
     AUTH_COOKIE_DOMAIN: z.string().optional().or(z.literal('')),
     AUTH_COOKIE_SECURE: z.enum(['true', 'false']).default('false'),

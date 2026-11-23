@@ -88,7 +88,7 @@ export class ExpiringDocumentDto {
   @ApiProperty({ example: 'ID_CARD' })
   type: string;
 
-  @ApiProperty({ format: 'date-time', nullable: true })
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
   expiresAt: Date | null;
 }
 
@@ -111,22 +111,22 @@ export class ProfessionalProfileResponseDto {
   @ApiProperty({ example: 8 })
   experienceYears: number;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, nullable: true })
   bio: string | null;
 
   @ApiProperty({ format: 'date-time' })
   submittedAt: Date;
 
-  @ApiPropertyOptional({ format: 'date-time', nullable: true })
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   decidedAt: Date | null;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, nullable: true })
   decisionReason: string | null;
 
-  @ApiPropertyOptional({ format: 'date-time', nullable: true })
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   complementRequestedAt: Date | null;
 
-  @ApiPropertyOptional({ format: 'date-time', nullable: true })
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   complementDueAt: Date | null;
 
   @ApiProperty({ example: 1 })

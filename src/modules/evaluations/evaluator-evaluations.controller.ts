@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -25,6 +26,7 @@ import {
   EvaluationSubmissionResponseDto,
   SaveEvaluationResultsDto,
 } from './dto/evaluation-assignment.dto';
+import { EvaluationResponseDto } from './dto/evaluation.dto';
 import { EvaluationsService } from './evaluations.service';
 
 @ApiTags('Évaluation - évaluateur')
@@ -54,6 +56,22 @@ export class EvaluatorEvaluationsController {
     @Param('id') id: string,
   ): Promise<EvaluationAssignmentResponseDto> {
     return this.evaluations.getMyAssignment(evaluator, id);
+  }
+
+  @Patch(':id')
+  @ApiOperation({
+    summary: 'Enregistrer les notes d’une évaluation (alias)',
+    description: 'Alias déprécié, utiliser PUT /api/v1/evaluator/assignments/{id}/results.',
+    deprecated: true,
+  })
+  @ApiOkResponse({ type: EvaluationResponseDto })
+  patchResults(
+    @CurrentUser() evaluator: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: SaveEvaluationResultsDto,
+    @Req() request: ContextualRequest,
+  ): Promise<EvaluationResponseDto> {
+    return this.evaluations.saveResults(evaluator, id, dto, request);
   }
 
   @Put(':id/results')

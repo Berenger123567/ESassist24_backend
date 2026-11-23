@@ -25,10 +25,10 @@ export class EvaluatorResponseDto {
   @ApiProperty({ example: '+22900000000' })
   phone: string;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, nullable: true })
   firstName: string | null;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, nullable: true })
   lastName: string | null;
 
   @ApiProperty({ example: 2 })

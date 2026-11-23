@@ -1,8 +1,9 @@
-import { Body, Controller, Delete, HttpCode, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Post, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
   ApiNoContentResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
@@ -21,6 +22,18 @@ import { DevicesService } from './devices.service';
 @UseGuards(AuthGuard)
 export class DevicesController {
   constructor(private readonly devicesService: DevicesService) {}
+
+  @Get()
+  @ApiOperation({
+    summary: 'Lister mes appareils actifs',
+    description:
+      'Alias de compatibilité, utiliser POST /api/v1/devices pour enregistrer un appareil.',
+    deprecated: true,
+  })
+  @ApiOkResponse({ type: [DeviceResponseDto] })
+  listActive(@CurrentUser() user: AuthUser) {
+    return this.devicesService.listActive(user.id);
+  }
 
   @Post()
   @ApiOperation({ summary: 'Enregistrer ou mettre à jour un appareil de notification' })

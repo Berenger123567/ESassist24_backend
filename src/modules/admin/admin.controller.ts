@@ -1,25 +1,16 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Headers,
-  HttpCode,
-  Post,
-  Req,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, Req, Res, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiCookieAuth,
   ApiCreatedResponse,
-  ApiHeader,
+  ApiExtraModels,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
 import { ClientPlatform } from '@prisma/client';
 import { Request, Response } from 'express';
+import { ApiClientHeaders } from '../../common/decorators/api-client-headers.decorator';
 import { ApiCommonErrors } from '../../common/decorators/api-common-errors.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -53,11 +44,13 @@ import {
   AcceptAdminInvitationResponseDto,
   AdminInvitationResponseDto,
   CreateAdminInvitationDto,
+  CreateEvaluatorDto,
   CreatedAdminInvitationResponseDto,
 } from './dto/admin-invitation.dto';
 
 @ApiTags('Administration')
 @ApiCommonErrors()
+@ApiExtraModels(AdminMfaChallengeResponseDto, AdminSessionResponseDto)
 @Controller('admin')
 export class AdminController {
   constructor(
@@ -70,20 +63,29 @@ export class AdminController {
   @Post('auth/login')
   @HttpCode(200)
   @ApiOperation({ summary: 'Connexion administrateur avec mot de passe et MFA optionnel' })
-  @ApiHeader({ name: 'X-Client-Platform', required: false })
-  @ApiHeader({ name: 'X-Device-Id', required: false })
+  @ApiClientHeaders({ deviceId: true })
   @ApiCookieAuth(REFRESH_COOKIE_NAME)
   @ApiCookieAuth(CSRF_COOKIE_NAME)
-  @ApiOkResponse({ type: AdminSessionResponseDto })
+  @ApiOkResponse({
+    schema: {
+      oneOf: [
+        { $ref: '#/components/schemas/AdminMfaChallengeResponseDto' },
+        { $ref: '#/components/schemas/AdminSessionResponseDto' },
+      ],
+      discriminator: { propertyName: 'mfaRequired' },
+    },
+  })
   async login(
     @Body() dto: AdminLoginDto,
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
-    @Headers('user-agent') userAgent?: string,
-    @Headers('x-client-platform') platform?: string,
-    @Headers('x-device-id') deviceIdHeader?: string,
   ): Promise<AdminSessionResponseDto | AdminMfaChallengeResponseDto> {
-    const meta = this.meta(request, userAgent, platform, dto.deviceId ?? deviceIdHeader);
+    const meta = this.meta(
+      request,
+      this.header(request, 'user-agent'),
+      this.header(request, 'x-client-platform'),
+      dto.deviceId ?? this.header(request, 'x-device-id'),
+    );
     const result = await this.adminAuthService.login(dto, meta);
     return this.applyLoginResult(response, result, meta.clientPlatform);
   }
@@ -91,8 +93,7 @@ export class AdminController {
   @Post('auth/totp/verify')
   @HttpCode(200)
   @ApiOperation({ summary: 'Vérifier le code TOTP et ouvrir la session administrateur' })
-  @ApiHeader({ name: 'X-Client-Platform', required: false })
-  @ApiHeader({ name: 'X-Device-Id', required: false })
+  @ApiClientHeaders({ deviceId: true })
   @ApiCookieAuth(REFRESH_COOKIE_NAME)
   @ApiCookieAuth(CSRF_COOKIE_NAME)
   @ApiOkResponse({ type: AdminSessionResponseDto })
@@ -100,11 +101,13 @@ export class AdminController {
     @Body() dto: AdminMfaVerifyDto,
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
-    @Headers('user-agent') userAgent?: string,
-    @Headers('x-client-platform') platform?: string,
-    @Headers('x-device-id') deviceIdHeader?: string,
   ): Promise<AdminSessionResponseDto> {
-    const meta = this.meta(request, userAgent, platform, dto.deviceId ?? deviceIdHeader);
+    const meta = this.meta(
+      request,
+      this.header(request, 'user-agent'),
+      this.header(request, 'x-client-platform'),
+      dto.deviceId ?? this.header(request, 'x-device-id'),
+    );
     const tokens = await this.adminAuthService.verifyTotp(dto, meta);
     return this.applyWebSession(response, tokens, meta.clientPlatform);
   }
@@ -157,6 +160,26 @@ export class AdminController {
     return this.adminInvitationService.list();
   }
 
+  @Post('evaluators')
+  @UseGuards(AuthGuard, RolesGuard, AdminIpGuard, RouteRateLimitGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Créer une invitation d’évaluateur (alias)',
+    description: 'Alias déprécié, utiliser POST /api/v1/admin/invitations avec role=EVALUATOR.',
+    deprecated: true,
+  })
+  @ApiCreatedResponse({ type: CreatedAdminInvitationResponseDto })
+  createEvaluator(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: CreateEvaluatorDto,
+  ): Promise<CreatedAdminInvitationResponseDto> {
+    return this.adminInvitationService.create(
+      { phone: dto.phone, email: dto.email, role: 'EVALUATOR' },
+      user.id,
+    );
+  }
+
   @Post('invitations/accept')
   @HttpCode(200)
   @ApiOperation({ summary: 'Accepter une invitation et créer les identifiants administrateur' })
@@ -165,6 +188,11 @@ export class AdminController {
     @Body() dto: AcceptAdminInvitationDto,
   ): Promise<AcceptAdminInvitationResponseDto> {
     return this.adminInvitationService.accept(dto);
+  }
+
+  private header(request: Request, name: string): string | undefined {
+    const value = request.headers[name];
+    return Array.isArray(value) ? value[0] : value;
   }
 
   private meta(

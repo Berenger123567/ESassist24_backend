@@ -55,7 +55,7 @@ export class AdminTotpActivateDto {
 }
 
 export class AdminMfaChallengeResponseDto {
-  @ApiProperty({ example: true })
+  @ApiProperty({ type: Boolean, enum: [true] })
   mfaRequired: boolean;
 
   @ApiProperty()
@@ -63,7 +63,7 @@ export class AdminMfaChallengeResponseDto {
 }
 
 export class AdminSessionResponseDto extends AuthTokensDto {
-  @ApiProperty({ example: false })
+  @ApiProperty({ type: Boolean, enum: [false] })
   mfaRequired: boolean;
 }
 

@@ -58,7 +58,7 @@ export class SpecialtyListDto {
   @ApiProperty({ type: [SpecialtyDto] })
   data: SpecialtyDto[];
 
-  @ApiPropertyOptional({ nullable: true, example: null })
+  @ApiPropertyOptional({ type: String, nullable: true, example: null })
   nextCursor: string | null;
 }
 
@@ -80,7 +80,7 @@ export class ZoneListDto {
   @ApiProperty({ type: [ZoneDto] })
   data: ZoneDto[];
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, nullable: true })
   nextCursor: string | null;
 }
 
@@ -93,6 +93,6 @@ export class NearbyZoneListDto {
   @ApiProperty({ type: [NearbyZoneDto] })
   data: NearbyZoneDto[];
 
-  @ApiPropertyOptional({ nullable: true, example: null })
+  @ApiPropertyOptional({ type: String, nullable: true, example: null })
   nextCursor: string | null;
 }

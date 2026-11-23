@@ -21,19 +21,19 @@ export class MeResponseDto {
   @ApiProperty({ example: '+22997000000' })
   phone: string;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, nullable: true })
   firstName: string | null;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, nullable: true })
   lastName: string | null;
 
   @ApiProperty({ example: 'ACTIVE' })
   status: string;
 
-  @ApiPropertyOptional({ format: 'uuid', nullable: true })
+  @ApiPropertyOptional({ type: String, format: 'uuid', nullable: true })
   photoDocumentId: string | null;
 
-  @ApiPropertyOptional({ type: ZoneSummaryDto, nullable: true })
+  @ApiPropertyOptional({ type: () => ZoneSummaryDto, nullable: true })
   zone: ZoneSummaryDto | null;
 
   @ApiProperty({ example: ['CLIENT'] })

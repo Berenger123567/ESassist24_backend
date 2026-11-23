@@ -11,6 +11,7 @@ import { RouteRateLimitGuard } from '../../common/guards/route-rate-limit.guard'
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { ContextualRequest } from '../../common/middleware/request-context.middleware';
 import { AuthUser } from '../../common/types/auth-user';
+import { DocumentViewUrlResponseDto } from '../documents/dto/document.dto';
 import { DocumentsService } from '../documents/documents.service';
 import { VerificationService } from './verification.service';
 
@@ -40,17 +41,7 @@ export class AdminDocumentsController {
   @Get(':id/view-url')
   @RouteRateLimit({ max: 'ADMIN_VIEW_URL_RATE_LIMIT_MAX' })
   @ApiOperation({ summary: 'Créer un lien signé de consultation valable 5 minutes' })
-  @ApiOkResponse({
-    schema: {
-      type: 'object',
-      properties: {
-        documentId: { type: 'string' },
-        viewUrl: { type: 'string' },
-        method: { type: 'string', example: 'GET' },
-        expiresInSeconds: { type: 'number', example: 300 },
-      },
-    },
-  })
+  @ApiOkResponse({ type: DocumentViewUrlResponseDto })
   createViewUrl(
     @Param('id') id: string,
     @CurrentUser() admin: AuthUser,

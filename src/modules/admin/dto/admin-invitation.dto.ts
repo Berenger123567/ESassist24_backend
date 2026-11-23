@@ -34,6 +34,21 @@ export class CreateAdminInvitationDto {
   email?: string;
 }
 
+export class CreateEvaluatorDto {
+  @ApiProperty({ example: '+22997000000' })
+  @Transform(trim)
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(30)
+  phone: string;
+
+  @ApiPropertyOptional({ format: 'email' })
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(200)
+  email?: string;
+}
+
 export class AcceptAdminInvitationDto {
   @ApiProperty({ description: 'Jeton brut transmis dans le lien d’invitation' })
   @IsString()
@@ -69,7 +84,7 @@ export class AdminInvitationResponseDto {
   @ApiProperty({ example: '+22997000000' })
   phone: string;
 
-  @ApiPropertyOptional({ nullable: true, format: 'email' })
+  @ApiPropertyOptional({ type: String, nullable: true, format: 'email' })
   email: string | null;
 
   @ApiProperty({ enum: [...ADMIN_INVITATION_ROLES] })
@@ -81,13 +96,13 @@ export class AdminInvitationResponseDto {
   @ApiProperty({ format: 'date-time' })
   expiresAt: Date;
 
-  @ApiPropertyOptional({ nullable: true, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, nullable: true, format: 'date-time' })
   acceptedAt: Date | null;
 
-  @ApiPropertyOptional({ nullable: true, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, nullable: true, format: 'date-time' })
   revokedAt: Date | null;
 
-  @ApiPropertyOptional({ nullable: true, format: 'uuid' })
+  @ApiPropertyOptional({ type: String, nullable: true, format: 'uuid' })
   invitedByUserId: string | null;
 
   @ApiProperty({ format: 'date-time' })

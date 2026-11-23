@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Param, Patch, Post, Put, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Put,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -68,6 +79,21 @@ export class AdminEvaluationGridsController {
     @Req() request: ContextualRequest,
   ): Promise<EvaluationGridResponseDto> {
     return this.evaluations.updateGrid(admin, id, dto, request);
+  }
+
+  @Delete(':id')
+  @ApiOperation({
+    summary: 'Désactiver une grille d’évaluation (alias)',
+    description: 'Alias déprécié de la mise à jour PATCH avec active=false.',
+    deprecated: true,
+  })
+  @ApiOkResponse({ type: EvaluationGridResponseDto })
+  deactivate(
+    @CurrentUser() admin: AuthUser,
+    @Param('id') id: string,
+    @Req() request: ContextualRequest,
+  ): Promise<EvaluationGridResponseDto> {
+    return this.evaluations.deactivateGrid(admin, id, request);
   }
 
   @Put(':id/criteria')
