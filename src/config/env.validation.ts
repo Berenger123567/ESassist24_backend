@@ -45,6 +45,37 @@ const envSchema = z
     AUTH_COOKIE_DOMAIN: z.string().optional().or(z.literal('')),
     AUTH_COOKIE_SECURE: z.enum(['true', 'false']).default('false'),
     AUTH_COOKIE_SAMESITE: z.enum(['lax', 'strict', 'none']).default('lax'),
+
+    ADMIN_IP_ALLOWLIST: z.string().default(''),
+    TRUST_PROXY_CIDR: z.string().default(''),
+    ADMIN_IP_DEV_BYPASS: z.enum(['true', 'false']).default('false'),
+    ADMIN_RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(120),
+    ADMIN_RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().min(1).default(60),
+    ADMIN_VIEW_URL_RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(20),
+    VERIFICATION_SLA_HOURS: z.coerce.number().int().min(1).default(48),
+    VERIFICATION_WORK_START_HOUR: z.coerce.number().int().min(0).max(23).default(8),
+    VERIFICATION_WORK_END_HOUR: z.coerce.number().int().min(1).max(24).default(18),
+    VERIFICATION_TIMEZONE: z.string().min(1).default('Africa/Porto-Novo'),
+    VERIFICATION_HOLIDAYS: z.string().default(''),
+    VERIFICATION_REMINDER_DAYS: z.string().default('30,14,7,1,0'),
+    VERIFICATION_REMINDER_CRON: z.string().min(1).default('0 6 * * *'),
+    VERIFICATION_REMINDERS_ENABLED: z.enum(['true', 'false']).default('true'),
+    VERIFICATION_COMPLEMENT_GRACE_DAYS: z.coerce.number().int().min(1).default(30),
+    VERIFICATION_VIEW_URL_TTL_SECONDS: z.coerce.number().int().min(30).max(600).default(300),
+    VERIFICATION_DECISION_IDEMPOTENCY_TTL_SECONDS: z.coerce.number().int().min(60).default(86400),
+    EVALUATION_PASS_PERCENT: z.coerce.number().int().min(1).max(100).default(70),
+    FCM_PROJECT_ID: z.string().default(''),
+    FCM_CLIENT_EMAIL: z.string().default(''),
+    FCM_PRIVATE_KEY: z.string().default(''),
+    FCM_SCOPE: z.string().default('https://www.googleapis.com/auth/firebase.messaging'),
+    FCM_TOKEN_URL: z.string().default('https://oauth2.googleapis.com/token'),
+    VAPID_PUBLIC_KEY: z.string().default(''),
+    VAPID_PRIVATE_KEY: z.string().default(''),
+    VAPID_SUBJECT: z.string().default('mailto:admin@electro-assist.local'),
+    PUSH_MAX_ATTEMPTS: z.coerce.number().int().min(1).default(3),
+    BULLMQ_PREFIX: z.string().min(1).default('ea'),
+    BULLMQ_REMOVE_ON_COMPLETE: z.coerce.number().int().min(0).default(100),
+    BULLMQ_REMOVE_ON_FAIL: z.coerce.number().int().min(0).default(50),
   })
   .superRefine((env, ctx) => {
     if (env.AUTH_COOKIE_SAMESITE === 'none' && env.AUTH_COOKIE_SECURE !== 'true') {
@@ -91,6 +122,20 @@ const envSchema = z
           message: 'Le secret de signature documentaire par défaut est interdit en production.',
         });
       }
+      if (!env.ADMIN_IP_ALLOWLIST.trim()) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['ADMIN_IP_ALLOWLIST'],
+          message: 'ADMIN_IP_ALLOWLIST est obligatoire en production.',
+        });
+      }
+      if (env.ADMIN_IP_DEV_BYPASS === 'true') {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['ADMIN_IP_DEV_BYPASS'],
+          message: 'ADMIN_IP_DEV_BYPASS est interdit en production.',
+        });
+      }
     }
   });
 
@@ -110,6 +155,9 @@ export function validateEnv(raw: Record<string, unknown>): AppEnv {
     input.REDIS_URL ??= '';
     input.DOCUMENT_SIGNING_SECRET ??= 'test-document-signing-secret-at-least-32';
     input.ADMIN_BOOTSTRAP_PASSWORD ??= 'AdminTest123!';
+    input.ADMIN_IP_ALLOWLIST ??= '';
+    input.ADMIN_IP_DEV_BYPASS ??= 'true';
+    input.VERIFICATION_REMINDERS_ENABLED ??= 'false';
   }
 
   const result = envSchema.safeParse(input);

@@ -3,7 +3,9 @@ import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swa
 import { RoleCode } from '@prisma/client';
 import { ApiCommonErrors } from '../../common/decorators/api-common-errors.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { AdminIpGuard } from '../../common/guards/admin-ip.guard';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import { RouteRateLimitGuard } from '../../common/guards/route-rate-limit.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { DataRequestsService } from './data-requests.service';
 import {
@@ -16,7 +18,7 @@ import {
 @ApiBearerAuth()
 @ApiCommonErrors()
 @Controller('admin/data-requests')
-@UseGuards(AuthGuard, RolesGuard)
+@UseGuards(AuthGuard, RolesGuard, AdminIpGuard, RouteRateLimitGuard)
 @Roles(RoleCode.ADMIN)
 export class AdminDataRequestsController {
   constructor(private readonly dataRequestsService: DataRequestsService) {}

@@ -233,8 +233,11 @@ export class DocumentsService {
     };
   }
 
-  async downloadDocument(token: string, response: Response): Promise<void> {
+  async downloadDocument(token: string, response: Response, sessionId?: string): Promise<void> {
     const tokenPayload = verifyDocumentToken(token, this.signingSecret, 'download');
+    if (tokenPayload.sessionId && tokenPayload.sessionId !== sessionId) {
+      throw new ApiError(ERROR_CODES.FORBIDDEN, 403, 'Lien signé lié à une autre session.');
+    }
     let document = await this.getDocumentOrThrow(tokenPayload.documentId);
     document = await this.expireDocumentIfNeeded(document);
 
@@ -261,6 +264,7 @@ export class DocumentsService {
 
     const fileName = this.sanitizeFileName(document.fileName);
     response.status(200);
+    response.setHeader('Cache-Control', 'no-store');
     response.setHeader('Content-Type', document.detectedContentType ?? document.contentType);
     response.setHeader('Content-Length', String(stats.size));
     response.setHeader(

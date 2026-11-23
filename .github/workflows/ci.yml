@@ -47,6 +47,10 @@ jobs:
       ADMIN_BOOTSTRAP_PASSWORD: 'AdminTest123!'
       DOCUMENT_SIGNING_SECRET: ci-document-signing-secret-at-least-32
       DOCUMENT_STORAGE_DIR: ./.tmp-document-storage
+      ADMIN_IP_ALLOWLIST: ''
+      ADMIN_IP_DEV_BYPASS: 'true'
+      VERIFICATION_REMINDERS_ENABLED: 'false'
+      VERIFICATION_HOLIDAYS: ''
 
     steps:
       - uses: actions/checkout@v4

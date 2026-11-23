@@ -3,6 +3,8 @@ import { join } from 'node:path';
 
 async function main() {
   process.env.NODE_ENV ??= 'test';
+  process.env.REDIS_URL = '';
+  process.env.VERIFICATION_REMINDERS_ENABLED = 'false';
 
   const { NestFactory } = await import('@nestjs/core');
   const { AppModule } = await import('../app.module');

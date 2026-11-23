@@ -54,6 +54,7 @@
     "@nestjs/swagger": "^11.4.8",
     "@node-rs/argon2": "^2.2.2",
     "@prisma/client": "^6.19.3",
+    "bullmq": "^6.7.8",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "cookie-parser": "^1.4.7",
@@ -64,6 +65,7 @@
     "pino": "^10.4.0",
     "pino-http": "^11.0.0",
     "prisma": "^6.19.3",
+    "web-push": "^4.0.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -76,6 +78,7 @@
     "@types/jest": "^29.5.14",
     "@types/node": "^22.20.5",
     "@types/supertest": "^6.0.3",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9.39.5",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.7",

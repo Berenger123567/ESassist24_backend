@@ -97,6 +97,67 @@ enum DocumentEventType {
   REJECTED
   EXPIRED
   ACCESSED
+  VIEW_LINK_ISSUED
+}
+
+enum VerificationDecisionType {
+  VERIFIED
+  REFUSED
+  COMPLEMENT_REQUESTED
+}
+
+enum VerifiedReasonCode {
+  VERIFIED_OK
+  DOCUMENT_MISSING
+  DOCUMENT_UNREADABLE
+  DOCUMENT_EXPIRED
+  DOCUMENT_MISMATCH
+  EXPERIENCE_INSUFFICIENT
+  SPECIALTY_NOT_JUSTIFIED
+  ZONE_NOT_COVERED
+  OTHER
+}
+
+enum AuditResult {
+  SUCCESS
+  DENIED
+}
+
+enum DevicePlatform {
+  WEB
+  ANDROID
+  IOS
+}
+
+enum PushProvider {
+  FCM
+  WEB_PUSH
+  EXPO
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  READ
+}
+
+enum NotificationType {
+  VERIFICATION_APPROVED
+  VERIFICATION_REFUSED
+  COMPLEMENT_REQUESTED
+  DOCUMENT_EXPIRING
+  DOCUMENT_EXPIRED
+  ADMIN_DOCUMENT_EXPIRING
+  EVALUATION_ASSIGNED
+  EVALUATION_SUBMITTED
+  CERTIFICATION_OBTAINED
+}
+
+enum EvaluationAssignmentStatus {
+  ASSIGNED
+  IN_PROGRESS
+  SUBMITTED
 }
 
 model User {
@@ -111,15 +172,20 @@ model User {
   updatedAt       DateTime   @updatedAt
   deletedAt       DateTime?
 
-  zone                ServiceZone?         @relation(fields: [zoneId], references: [id], onDelete: SetNull)
-  photoDocument       Document?            @relation("UserProfilePhoto", fields: [photoDocumentId], references: [id], onDelete: SetNull)
-  roles               UserRole[]
-  sessions            Session[]
-  documents           Document[]           @relation("DocumentOwner")
-  professionalProfile ProfessionalProfile?
-  adminCredential     AdminCredential?
-  dataRequests        DataRequest[]
-  sentInvitations     AdminInvitation[]    @relation("AdminInvitationSender")
+  zone                  ServiceZone?           @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  photoDocument         Document?              @relation("UserProfilePhoto", fields: [photoDocumentId], references: [id], onDelete: SetNull)
+  roles                 UserRole[]
+  sessions              Session[]
+  documents             Document[]             @relation("DocumentOwner")
+  professionalProfile   ProfessionalProfile?
+  adminCredential       AdminCredential?
+  dataRequests          DataRequest[]
+  sentInvitations       AdminInvitation[]      @relation("AdminInvitationSender")
+  devices               Device[]
+  notifications         Notification[]
+  evaluationAssignments EvaluationAssignment[] @relation("EvaluationEvaluator")
+  assignedEvaluations   EvaluationAssignment[] @relation("EvaluationAssigner")
+  evaluationSubmissions EvaluationSubmission[] @relation("EvaluationSubmitter")
 
   @@index([zoneId])
   @@map("users")
@@ -168,18 +234,18 @@ model OtpCode {
 }
 
 model Session {
-  id               String         @id @default(uuid()) @db.Uuid
-  userId           String         @db.Uuid
-  refreshTokenHash String         @unique
-  familyId         String         @db.Uuid
-  replacedBySessionId String?     @db.Uuid
-  revokedAt        DateTime?
-  expiresAt        DateTime
-  ip               String?
-  userAgent        String?
-  clientPlatform   ClientPlatform @default(UNKNOWN)
-  clientDeviceId   String?
-  createdAt        DateTime       @default(now())
+  id                  String         @id @default(uuid()) @db.Uuid
+  userId              String         @db.Uuid
+  refreshTokenHash    String         @unique
+  familyId            String         @db.Uuid
+  replacedBySessionId String?        @db.Uuid
+  revokedAt           DateTime?
+  expiresAt           DateTime
+  ip                  String?
+  userAgent           String?
+  clientPlatform      ClientPlatform @default(UNKNOWN)
+  clientDeviceId      String?
+  createdAt           DateTime       @default(now())
 
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   replacedBy       Session?  @relation("SessionRotation", fields: [replacedBySessionId], references: [id], onDelete: SetNull)
@@ -221,20 +287,28 @@ model ServiceZone {
 }
 
 model ProfessionalProfile {
-  id              String             @id @default(uuid()) @db.Uuid
-  userId          String             @unique @db.Uuid
-  status          ProfessionalStatus @default(PENDING)
-  experienceYears Int                @default(0)
-  bio             String?
-  submittedAt     DateTime           @default(now())
-  decidedAt       DateTime?
-  decisionReason  String?
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  id                     String             @id @default(uuid()) @db.Uuid
+  userId                 String             @unique @db.Uuid
+  status                 ProfessionalStatus @default(PENDING)
+  experienceYears        Int                @default(0)
+  bio                    String?
+  submittedAt            DateTime           @default(now())
+  decidedAt              DateTime?
+  decisionReason         String?
+  complementRequestedAt  DateTime?
+  complementDueAt        DateTime?
+  submissionCount        Int                @default(1)
+  certifiedAt            DateTime?
+  evaluationSubmissionId String?            @unique @db.Uuid
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
 
-  user        User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  specialties ProfessionalSpecialty[]
-  zones       ProfessionalZone[]
+  user                    User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialties             ProfessionalSpecialty[]
+  zones                   ProfessionalZone[]
+  decisions               VerificationDecision[]
+  evaluationAssignments   EvaluationAssignment[]
+  certificationSubmission EvaluationSubmission?   @relation("ProfileCertification", fields: [evaluationSubmissionId], references: [id], onDelete: SetNull)
 
   @@index([status])
   @@map("professional_profiles")
@@ -265,11 +339,11 @@ model ProfessionalZone {
 }
 
 model Document {
-  id          String         @id @default(uuid()) @db.Uuid
-  ownerId     String         @db.Uuid
-  type        DocumentType
-  status      DocumentStatus @default(PENDING)
-  fileName    String
+  id                  String         @id @default(uuid()) @db.Uuid
+  ownerId             String         @db.Uuid
+  type                DocumentType
+  status              DocumentStatus @default(PENDING)
+  fileName            String
   contentType         String
   detectedContentType String?
   sizeBytes           Int
@@ -277,12 +351,13 @@ model Document {
   storageKey          String?
   uploadedAt          DateTime?
   expiresAt           DateTime?
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
 
-  owner          User            @relation("DocumentOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  profilePhotoOf User?           @relation("UserProfilePhoto")
+  owner          User               @relation("DocumentOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  profilePhotoOf User?              @relation("UserProfilePhoto")
   events         DocumentEvent[]
+  reminders      DocumentReminder[]
 
   @@index([ownerId])
   @@index([type])
@@ -292,14 +367,14 @@ model Document {
 }
 
 model OtpDelivery {
-  id          String         @id @default(uuid()) @db.Uuid
-  phone       String
-  channel     OtpChannel     @default(SMS)
-  status      DeliveryStatus @default(QUEUED)
-  attempts    Int            @default(0)
-  error       String?
-  createdAt   DateTime       @default(now())
-  sentAt      DateTime?
+  id        String         @id @default(uuid()) @db.Uuid
+  phone     String
+  channel   OtpChannel     @default(SMS)
+  status    DeliveryStatus @default(QUEUED)
+  attempts  Int            @default(0)
+  error     String?
+  createdAt DateTime       @default(now())
+  sentAt    DateTime?
 
   @@index([phone, createdAt])
   @@index([status])
@@ -307,16 +382,16 @@ model OtpDelivery {
 }
 
 model AdminCredential {
-  userId               String    @id @db.Uuid
-  passwordHash         String
-  passwordChangedAt    DateTime  @default(now())
-  totpSecret           String?
-  totpEnabledAt        DateTime?
-  totpLastUsedStep     Int?
-  failedLoginAttempts  Int       @default(0)
-  lockedUntil          DateTime?
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  userId              String    @id @db.Uuid
+  passwordHash        String
+  passwordChangedAt   DateTime  @default(now())
+  totpSecret          String?
+  totpEnabledAt       DateTime?
+  totpLastUsedStep    Int?
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -344,14 +419,14 @@ model AdminInvitation {
 }
 
 model DataRequest {
-  id            String           @id @default(uuid()) @db.Uuid
-  userId        String           @db.Uuid
-  type          DataRequestType
-  status        DataRequestStatus @default(PENDING)
-  details       String?
+  id             String            @id @default(uuid()) @db.Uuid
+  userId         String            @db.Uuid
+  type           DataRequestType
+  status         DataRequestStatus @default(PENDING)
+  details        String?
   resolutionNote String?
-  requestedAt   DateTime         @default(now())
-  resolvedAt    DateTime?
+  requestedAt    DateTime          @default(now())
+  resolvedAt     DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -375,3 +450,249 @@ model DocumentEvent {
   @@map("document_events")
 }
 
+model AuditLog {
+  id           BigInt      @id @default(autoincrement()) @db.BigInt
+  actorId      String?     @db.Uuid
+  actorRole    String?
+  action       String
+  targetType   String?
+  targetId     String?
+  before       Json?
+  after        Json?
+  ip           String?
+  userAgent    String?
+  sessionId    String?     @db.Uuid
+  requestId    String?
+  deviceId     String?
+  result       AuditResult @default(SUCCESS)
+  reason       String?
+  previousHash String?
+  hash         String?
+  createdAt    DateTime    @default(now())
+
+  @@index([action, createdAt])
+  @@index([actorId, createdAt])
+  @@index([targetType, targetId])
+  @@index([requestId])
+  @@map("audit_logs")
+}
+
+model VerificationDecision {
+  id              String                   @id @default(uuid()) @db.Uuid
+  profileId       String                   @db.Uuid
+  adminId         String                   @db.Uuid
+  decision        VerificationDecisionType
+  reasonCode      VerifiedReasonCode
+  reasonText      String
+  requestedItems  Json?
+  complementDueAt DateTime?
+  idempotencyKey  String?
+  requestHash     String?
+  createdAt       DateTime                 @default(now())
+
+  profile ProfessionalProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([adminId, idempotencyKey])
+  @@index([profileId, createdAt])
+  @@index([decision, createdAt])
+  @@map("verification_decisions")
+}
+
+model IdempotencyRecord {
+  id          String   @id @default(uuid()) @db.Uuid
+  scope       String
+  adminId     String   @db.Uuid
+  key         String
+  requestHash String
+  status      Int
+  response    Json
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@unique([scope, adminId, key])
+  @@index([expiresAt])
+  @@map("idempotency_records")
+}
+
+model Device {
+  id                   String         @id @default(uuid()) @db.Uuid
+  userId               String         @db.Uuid
+  deviceId             String
+  platform             DevicePlatform
+  pushProvider         PushProvider   @default(WEB_PUSH)
+  pushToken            String?
+  pushSubscription     Json?
+  appVersion           String?
+  osVersion            String?
+  locale               String?
+  notificationsEnabled Boolean        @default(true)
+  lastSeenAt           DateTime       @default(now())
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  revokedAt            DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceId])
+  @@index([userId, revokedAt])
+  @@index([pushProvider])
+  @@map("devices")
+}
+
+model Notification {
+  id        String             @id @default(uuid()) @db.Uuid
+  userId    String             @db.Uuid
+  type      NotificationType
+  title     String
+  body      String
+  entityId  String?
+  route     String?
+  data      Json?
+  status    NotificationStatus @default(PENDING)
+  readAt    DateTime?
+  sentAt    DateTime?
+  createdAt DateTime           @default(now())
+
+  user   User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  outbox NotificationOutbox[]
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@map("notifications")
+}
+
+model NotificationOutbox {
+  id             String         @id @default(uuid()) @db.Uuid
+  notificationId String         @db.Uuid
+  deviceId       String?
+  channel        String
+  payload        Json
+  status         DeliveryStatus @default(QUEUED)
+  attempts       Int            @default(0)
+  lastError      String?
+  availableAt    DateTime       @default(now())
+  createdAt      DateTime       @default(now())
+  sentAt         DateTime?
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@index([status, availableAt])
+  @@index([notificationId])
+  @@map("notification_outbox")
+}
+
+model DocumentReminder {
+  id            String         @id @default(uuid()) @db.Uuid
+  documentId    String         @db.Uuid
+  thresholdDays Int
+  scheduledFor  DateTime
+  status        DeliveryStatus @default(QUEUED)
+  attempts      Int            @default(0)
+  lastError     String?
+  sentAt        DateTime?
+  createdAt     DateTime       @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, thresholdDays])
+  @@index([status, scheduledFor])
+  @@map("document_reminders")
+}
+
+model EvaluationGrid {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique
+  label       String
+  description String?
+  version     Int      @default(1)
+  passScore   Int      @default(70)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  criteria    EvaluationCriterion[]
+  assignments EvaluationAssignment[]
+
+  @@index([active])
+  @@map("evaluation_grids")
+}
+
+model EvaluationCriterion {
+  id          String   @id @default(uuid()) @db.Uuid
+  gridId      String   @db.Uuid
+  code        String
+  label       String
+  description String?
+  weight      Int
+  sortOrder   Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  grid    EvaluationGrid     @relation(fields: [gridId], references: [id], onDelete: Cascade)
+  results EvaluationResult[]
+
+  @@unique([gridId, code])
+  @@index([gridId, sortOrder])
+  @@map("evaluation_criteria")
+}
+
+model EvaluationAssignment {
+  id                String                     @id @default(uuid()) @db.Uuid
+  gridId            String                     @db.Uuid
+  profileId         String                     @db.Uuid
+  evaluatorId       String                     @db.Uuid
+  assignedByAdminId String                     @db.Uuid
+  status            EvaluationAssignmentStatus @default(ASSIGNED)
+  dueAt             DateTime?
+  notes             String?
+  submittedAt       DateTime?
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+
+  grid       EvaluationGrid        @relation(fields: [gridId], references: [id], onDelete: Restrict)
+  profile    ProfessionalProfile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  evaluator  User                  @relation("EvaluationEvaluator", fields: [evaluatorId], references: [id], onDelete: Restrict)
+  assignedBy User                  @relation("EvaluationAssigner", fields: [assignedByAdminId], references: [id], onDelete: Restrict)
+  results    EvaluationResult[]
+  submission EvaluationSubmission? @relation("AssignmentSubmission")
+
+  @@unique([profileId, gridId])
+  @@index([evaluatorId, status])
+  @@index([profileId])
+  @@index([status, dueAt])
+  @@map("evaluation_assignments")
+}
+
+model EvaluationResult {
+  id           String   @id @default(uuid()) @db.Uuid
+  assignmentId String   @db.Uuid
+  criterionId  String   @db.Uuid
+  score        Int
+  comment      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  assignment EvaluationAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  criterion  EvaluationCriterion  @relation(fields: [criterionId], references: [id], onDelete: Restrict)
+
+  @@unique([assignmentId, criterionId])
+  @@index([criterionId])
+  @@map("evaluation_results")
+}
+
+model EvaluationSubmission {
+  id           String   @id @default(uuid()) @db.Uuid
+  assignmentId String   @unique @db.Uuid
+  evaluatorId  String   @db.Uuid
+  score        Int
+  passed       Boolean
+  createdAt    DateTime @default(now())
+
+  assignment       EvaluationAssignment @relation("AssignmentSubmission", fields: [assignmentId], references: [id], onDelete: Cascade)
+  evaluator        User                 @relation("EvaluationSubmitter", fields: [evaluatorId], references: [id], onDelete: Restrict)
+  certifiedProfile ProfessionalProfile? @relation("ProfileCertification")
+
+  @@index([passed, createdAt])
+  @@map("evaluation_submissions")
+}

@@ -1,20 +1,23 @@
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
-import { ProfessionalStatus, RoleCode } from '@prisma/client';
+import { DocumentStatus, ProfessionalStatus, RoleCode } from '@prisma/client';
 import { ApiError } from '../../common/errors/api-error';
 import { ERROR_CODES } from '../../common/errors/error-codes';
 import { PrismaService } from '../../prisma/prisma.service';
 import { MeResponseDto } from '../users/dto/me.dto';
 import { UsersService } from '../users/users.service';
 import {
+  ExpiringDocumentDto,
   ProfessionalProfileResponseDto,
   UpdateProfessionalProfileDto,
   UpdateUserProfileDto,
 } from './dto/profile.dto';
 
+const CERTIFIED_LABEL = 'Certifié ÉLECTRO ASSIST';
+
 const STATUS_LABELS: Record<ProfessionalStatus, string> = {
   PENDING: 'En attente',
   VERIFIED: 'Vérifié',
-  CERTIFIED: 'Certifié ÉLECTRO ASSIST',
+  CERTIFIED: CERTIFIED_LABEL,
   SUSPENDED: 'Suspendu',
   REFUSED: 'Refusé',
 };
@@ -98,7 +101,16 @@ export class ProfilesService {
       );
     }
 
-    return this.toResponse(profile);
+    const expiringDocuments = await this.prisma.document.findMany({
+      where: {
+        ownerId: userId,
+        status: { not: DocumentStatus.EXPIRED },
+        expiresAt: { lte: new Date(Date.now() + 30 * 86_400_000) },
+      },
+      select: { id: true, type: true, expiresAt: true },
+      orderBy: { expiresAt: 'asc' },
+    });
+    return this.toResponse(profile, expiringDocuments);
   }
 
   async updateProfessionalProfile(
@@ -151,15 +163,19 @@ export class ProfilesService {
         create: { userId, roleId: role.id },
       });
 
-      const resubmission =
-        existing?.status === ProfessionalStatus.REFUSED
-          ? {
-              status: ProfessionalStatus.PENDING,
-              submittedAt: new Date(),
-              decidedAt: null,
-              decisionReason: null,
-            }
-          : {};
+      const needsResubmission =
+        existing?.status === ProfessionalStatus.REFUSED || existing?.complementRequestedAt !== null;
+      const resubmission = needsResubmission
+        ? {
+            status: ProfessionalStatus.PENDING,
+            submittedAt: new Date(),
+            decidedAt: null,
+            decisionReason: null,
+            complementRequestedAt: null,
+            complementDueAt: null,
+            submissionCount: { increment: 1 },
+          }
+        : {};
 
       const profile = await tx.professionalProfile.upsert({
         where: { userId },
@@ -190,32 +206,53 @@ export class ProfilesService {
     return this.getProfessionalProfile(userId);
   }
 
-  private toResponse(profile: {
-    id: string;
-    userId: string;
-    status: ProfessionalStatus;
-    experienceYears: number;
-    bio: string | null;
-    submittedAt: Date;
-    decidedAt: Date | null;
-    decisionReason: string | null;
-    createdAt: Date;
-    updatedAt: Date;
-    specialties: { specialty: { id: string; code: string; label: string } }[];
-    zones: {
-      zone: { id: string; code: string; name: string; department: string };
-    }[];
-  }): ProfessionalProfileResponseDto {
+  private toResponse(
+    profile: {
+      id: string;
+      userId: string;
+      status: ProfessionalStatus;
+      experienceYears: number;
+      bio: string | null;
+      submittedAt: Date;
+      decidedAt: Date | null;
+      decisionReason: string | null;
+      complementRequestedAt: Date | null;
+      complementDueAt: Date | null;
+      submissionCount: number;
+      certifiedAt: Date | null;
+      createdAt: Date;
+      updatedAt: Date;
+      specialties: { specialty: { id: string; code: string; label: string } }[];
+      zones: {
+        zone: { id: string; code: string; name: string; department: string };
+      }[];
+    },
+    expiringDocuments: ExpiringDocumentDto[],
+  ): ProfessionalProfileResponseDto {
     return {
       id: profile.id,
       userId: profile.userId,
       status: profile.status,
       statusLabel: STATUS_LABELS[profile.status],
+      certification: {
+        status: profile.status,
+        label: profile.status === ProfessionalStatus.CERTIFIED ? CERTIFIED_LABEL : null,
+        certifiedAt: profile.certifiedAt,
+        isDiploma: false,
+      },
       experienceYears: profile.experienceYears,
       bio: profile.bio,
       submittedAt: profile.submittedAt,
       decidedAt: profile.decidedAt,
       decisionReason: profile.decisionReason,
+      complementRequestedAt: profile.complementRequestedAt,
+      complementDueAt: profile.complementDueAt,
+      submissionCount: profile.submissionCount,
+      expiringDocuments: expiringDocuments.map((document) => ({
+        id: document.id,
+        type: document.type,
+        expiresAt: document.expiresAt,
+      })),
       specialties: profile.specialties.map(({ specialty }) => specialty),
       zones: profile.zones.map(({ zone }) => zone),
       createdAt: profile.createdAt,

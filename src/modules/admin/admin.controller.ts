@@ -23,7 +23,9 @@ import { Request, Response } from 'express';
 import { ApiCommonErrors } from '../../common/decorators/api-common-errors.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { AdminIpGuard } from '../../common/guards/admin-ip.guard';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import { RouteRateLimitGuard } from '../../common/guards/route-rate-limit.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { AuthUser } from '../../common/types/auth-user';
 import {
@@ -133,7 +135,7 @@ export class AdminController {
   }
 
   @Post('invitations')
-  @UseGuards(AuthGuard, RolesGuard)
+  @UseGuards(AuthGuard, RolesGuard, AdminIpGuard, RouteRateLimitGuard)
   @Roles('ADMIN')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Créer une invitation administrateur ou évaluateur' })
@@ -146,7 +148,7 @@ export class AdminController {
   }
 
   @Get('invitations')
-  @UseGuards(AuthGuard, RolesGuard)
+  @UseGuards(AuthGuard, RolesGuard, AdminIpGuard, RouteRateLimitGuard)
   @Roles('ADMIN')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Lister les invitations administrateur' })

@@ -13,6 +13,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import { CertificationSummaryDto } from '../../evaluations/dto/certification.dto';
 import { ZoneSummaryDto } from '../../users/dto/me.dto';
 
 const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
@@ -80,6 +81,17 @@ export class ProfessionalSpecialtyDto {
   label: string;
 }
 
+export class ExpiringDocumentDto {
+  @ApiProperty({ format: 'uuid' })
+  id: string;
+
+  @ApiProperty({ example: 'ID_CARD' })
+  type: string;
+
+  @ApiProperty({ format: 'date-time', nullable: true })
+  expiresAt: Date | null;
+}
+
 export class ProfessionalProfileResponseDto {
   @ApiProperty({ format: 'uuid' })
   id: string;
@@ -92,6 +104,9 @@ export class ProfessionalProfileResponseDto {
 
   @ApiProperty({ example: 'En attente' })
   statusLabel: string;
+
+  @ApiProperty({ type: CertificationSummaryDto })
+  certification: CertificationSummaryDto;
 
   @ApiProperty({ example: 8 })
   experienceYears: number;
@@ -107,6 +122,18 @@ export class ProfessionalProfileResponseDto {
 
   @ApiPropertyOptional({ nullable: true })
   decisionReason: string | null;
+
+  @ApiPropertyOptional({ format: 'date-time', nullable: true })
+  complementRequestedAt: Date | null;
+
+  @ApiPropertyOptional({ format: 'date-time', nullable: true })
+  complementDueAt: Date | null;
+
+  @ApiProperty({ example: 1 })
+  submissionCount: number;
+
+  @ApiProperty({ type: [ExpiringDocumentDto] })
+  expiringDocuments: ExpiringDocumentDto[];
 
   @ApiProperty({ type: [ProfessionalSpecialtyDto] })
   specialties: ProfessionalSpecialtyDto[];

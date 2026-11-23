@@ -6,13 +6,19 @@ import { LoggerModule } from 'nestjs-pino';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { validateEnv } from './config/env.validation';
 import { AdminModule } from './modules/admin/admin.module';
+import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { DataRequestsModule } from './modules/data-requests/data-requests.module';
+import { DevicesModule } from './modules/devices/devices.module';
 import { DocumentsModule } from './modules/documents/documents.module';
+import { EvaluationsModule } from './modules/evaluations/evaluations.module';
 import { HealthModule } from './modules/health/health.module';
+import { IdempotencyModule } from './modules/idempotency/idempotency.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ProfilesModule } from './modules/profiles/profiles.module';
 import { UsersModule } from './modules/users/users.module';
+import { VerificationModule } from './modules/verification/verification.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
@@ -46,11 +52,17 @@ import { PrismaModule } from './prisma/prisma.module';
     HealthModule,
     AuthModule,
     AdminModule,
+    AuditModule,
     UsersModule,
     ProfilesModule,
     CatalogModule,
     DataRequestsModule,
     DocumentsModule,
+    DevicesModule,
+    NotificationsModule,
+    IdempotencyModule,
+    VerificationModule,
+    EvaluationsModule,
   ],
   providers: [
     {

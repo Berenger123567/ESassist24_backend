@@ -2,7 +2,7 @@ process.env.NODE_ENV = 'test';
 process.env.PORT = process.env.PORT || '3000';
 process.env.DATABASE_URL =
   process.env.DATABASE_URL || 'postgresql://postgres:berenger123@localhost:5432/electro_assist';
-process.env.REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+process.env.REDIS_URL = process.env.REDIS_URL || '';
 process.env.JWT_ACCESS_SECRET =
   process.env.JWT_ACCESS_SECRET || 'access-secret-test-000000000000000000';
 process.env.REFRESH_TOKEN_PEPPER =
@@ -22,3 +22,10 @@ process.env.CORS_ORIGINS = process.env.CORS_ORIGINS || 'http://localhost:3000';
 process.env.OTP_FIXED_CODE = process.env.OTP_FIXED_CODE || '123456';
 // Vide => code fixe accepté pour tout numéro en test/dev (nécessaire pour e2e dynamiques)
 process.env.OTP_FIXED_PHONES = process.env.OTP_FIXED_PHONES || '';
+process.env.ADMIN_IP_ALLOWLIST = process.env.ADMIN_IP_ALLOWLIST || '';
+process.env.ADMIN_IP_DEV_BYPASS = process.env.ADMIN_IP_DEV_BYPASS || 'true';
+process.env.TRUST_PROXY_CIDR = process.env.TRUST_PROXY_CIDR || '';
+process.env.VERIFICATION_REMINDERS_ENABLED = process.env.VERIFICATION_REMINDERS_ENABLED || 'false';
+process.env.VERIFICATION_HOLIDAYS = process.env.VERIFICATION_HOLIDAYS || '';
+process.env.VERIFICATION_VIEW_URL_TTL_SECONDS =
+  process.env.VERIFICATION_VIEW_URL_TTL_SECONDS || '300';

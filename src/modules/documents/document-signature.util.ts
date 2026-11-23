@@ -16,6 +16,7 @@ export interface DownloadDocumentTokenPayload {
   purpose: 'download';
   documentId: string;
   storageKey: string;
+  sessionId?: string;
   exp: number;
 }
 
@@ -106,6 +107,11 @@ export function verifyDocumentToken(
       invalidToken();
     }
   } else if (typeof decoded.storageKey !== 'string' || decoded.storageKey.length === 0) {
+    invalidToken();
+  } else if (
+    decoded.sessionId !== undefined &&
+    (typeof decoded.sessionId !== 'string' || decoded.sessionId.length === 0)
+  ) {
     invalidToken();
   }
 

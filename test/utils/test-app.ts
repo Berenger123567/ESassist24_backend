@@ -19,6 +19,17 @@ export async function createTestApp(): Promise<{
 }
 
 export async function resetData(prisma: PrismaService): Promise<void> {
+  await prisma.evaluationResult.deleteMany();
+  await prisma.evaluationSubmission.deleteMany();
+  await prisma.evaluationAssignment.deleteMany();
+  await prisma.evaluationCriterion.deleteMany();
+  await prisma.evaluationGrid.deleteMany();
+  await prisma.notificationOutbox.deleteMany();
+  await prisma.notification.deleteMany();
+  await prisma.device.deleteMany();
+  await prisma.documentReminder.deleteMany();
+  await prisma.verificationDecision.deleteMany();
+  await prisma.idempotencyRecord.deleteMany();
   await prisma.dataRequest.deleteMany();
   await prisma.documentEvent.deleteMany();
   await prisma.document.deleteMany();

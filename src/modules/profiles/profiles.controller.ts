@@ -34,8 +34,27 @@ export class ProfilesController {
     return this.profilesService.updateProfile(user.id, dto);
   }
 
+  @Get('pro/profile')
+  @ApiOperation({ summary: 'Profil professionnel canonique, décision et pièces à surveiller' })
+  @ApiOkResponse({ type: ProfessionalProfileResponseDto })
+  getProProfile(@CurrentUser() user: AuthUser) {
+    return this.profilesService.getProfessionalProfile(user.id);
+  }
+
+  @Put('pro/profile')
+  @ApiOperation({
+    summary: 'Créer ou mettre à jour le profil professionnel (route canonique)',
+  })
+  @ApiOkResponse({ type: ProfessionalProfileResponseDto })
+  updateProProfile(@CurrentUser() user: AuthUser, @Body() dto: UpdateProfessionalProfileDto) {
+    return this.profilesService.updateProfessionalProfile(user.id, dto);
+  }
+
   @Get('me/professional-profile')
-  @ApiOperation({ summary: 'Profil professionnel et spécialités déclarées (compat)' })
+  @ApiOperation({
+    summary: 'Profil professionnel et spécialités déclarées (compat)',
+    deprecated: true,
+  })
   @ApiOkResponse({ type: ProfessionalProfileResponseDto })
   getProfessionalProfile(@CurrentUser() user: AuthUser) {
     return this.profilesService.getProfessionalProfile(user.id);
@@ -43,7 +62,8 @@ export class ProfilesController {
 
   @Put('me/professional-profile')
   @ApiOperation({
-    summary: 'Créer ou mettre à jour le profil professionnel (rôle PROFESSIONAL attribué, compat)',
+    summary: 'Créer ou mettre à jour le profil professionnel (compat)',
+    deprecated: true,
   })
   @ApiOkResponse({ type: ProfessionalProfileResponseDto })
   updateProfessionalProfile(
@@ -54,14 +74,17 @@ export class ProfilesController {
   }
 
   @Get('professionals/me')
-  @ApiOperation({ summary: 'Profil professionnel (alias spec 8.2)' })
+  @ApiOperation({ summary: 'Profil professionnel (alias spec 8.2)', deprecated: true })
   @ApiOkResponse({ type: ProfessionalProfileResponseDto })
   getProfessionalProfileSpec(@CurrentUser() user: AuthUser) {
     return this.profilesService.getProfessionalProfile(user.id);
   }
 
   @Patch('professionals/me')
-  @ApiOperation({ summary: 'Créer ou mettre à jour le profil professionnel (alias spec 8.2)' })
+  @ApiOperation({
+    summary: 'Créer ou mettre à jour le profil professionnel (alias spec 8.2)',
+    deprecated: true,
+  })
   @ApiOkResponse({ type: ProfessionalProfileResponseDto })
   updateProfessionalProfileSpec(
     @CurrentUser() user: AuthUser,
