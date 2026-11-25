@@ -43,6 +43,7 @@ enum DocumentType {
   PROFESSIONAL_CERTIFICATE
   REFERENCE_LETTER
   WORK_PHOTO
+  BREAKDOWN_PHOTO
 }
 
 enum DocumentStatus {
@@ -152,12 +153,93 @@ enum NotificationType {
   EVALUATION_ASSIGNED
   EVALUATION_SUBMITTED
   CERTIFICATION_OBTAINED
+  SERVICE_REQUEST_CREATED
+  SERVICE_REQUEST_CANCELLED
+  PROPOSAL_RECEIVED
+  PROPOSAL_ACCEPTED
+  MISSION_CREATED
+  ARRIVAL_CODE_READY
+  ARRIVAL_CODE_VERIFIED
+  PROFESSIONAL_REASSIGNED
+  MESSAGE_RECEIVED
+  QUOTE_SUBMITTED
+  QUOTE_ACCEPTED
+  QUOTE_REJECTED
+  WORK_AUTHORIZED
+  MISSION_COMPLETED
+  REPORT_READY
+  MISSION_CLOSED
 }
 
 enum EvaluationAssignmentStatus {
   ASSIGNED
   IN_PROGRESS
   SUBMITTED
+}
+
+enum ServiceRequestType {
+  ELECTRICAL_FAILURE
+  GENERATOR_FAILURE
+  SOLAR_FAILURE
+  PANEL_FAILURE
+  OTHER
+}
+
+enum UrgencyLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ServiceRequestStatus {
+  OPEN
+  MATCHED
+  ACCEPTED
+  CANCELLED
+  COMPLETED
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  BUSY
+  UNAVAILABLE
+}
+
+enum ProposalStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum MissionStatus {
+  ACCEPTED
+  CODE_VERIFIED
+  PENDING_QUOTE
+  WORK_AUTHORIZED
+  COMPLETED
+  CLOSED
+  CANCELLED
+}
+
+enum MissionEventType {
+  CREATED
+  ACCEPTED
+  CODE_VERIFIED
+  DEPARTED
+  ARRIVED
+  COMPLETED
+  CLOSED
+  REASSIGNED
+}
+
+enum QuoteStatus {
+  DRAFT
+  SUBMITTED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  SUPERSEDED
 }
 
 model User {
@@ -186,6 +268,13 @@ model User {
   evaluationAssignments EvaluationAssignment[] @relation("EvaluationEvaluator")
   assignedEvaluations   EvaluationAssignment[] @relation("EvaluationAssigner")
   evaluationSubmissions EvaluationSubmission[] @relation("EvaluationSubmitter")
+  serviceRequests       ServiceRequest[]      @relation("ServiceRequestClient")
+  missionClients        Mission[]             @relation("MissionClient")
+  favorites             Favorite[]
+  conversationMemberships ConversationParticipant[]
+  messages              Message[]
+  missionEvents         MissionEvent[]
+  serviceReports        ServiceReport[]
 
   @@index([zoneId])
   @@map("users")
@@ -281,6 +370,7 @@ model ServiceZone {
 
   users         User[]
   professionals ProfessionalZone[]
+  serviceRequests ServiceRequest[]
 
   @@index([department])
   @@map("service_zones")
@@ -300,6 +390,9 @@ model ProfessionalProfile {
   submissionCount        Int                @default(1)
   certifiedAt            DateTime?
   evaluationSubmissionId String?            @unique @db.Uuid
+  availabilityStatus     AvailabilityStatus @default(AVAILABLE)
+  availableFrom          DateTime?
+  availableUntil         DateTime?
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
 
@@ -308,7 +401,10 @@ model ProfessionalProfile {
   zones                   ProfessionalZone[]
   decisions               VerificationDecision[]
   evaluationAssignments   EvaluationAssignment[]
-  certificationSubmission EvaluationSubmission?   @relation("ProfileCertification", fields: [evaluationSubmissionId], references: [id], onDelete: SetNull)
+  certificationSubmission EvaluationSubmission? @relation("ProfileCertification", fields: [evaluationSubmissionId], references: [id], onDelete: SetNull)
+  favorites               Favorite[]
+  proposals               ServiceProposal[]
+  missions                Mission[]              @relation("MissionProfessional")
 
   @@index([status])
   @@map("professional_profiles")
@@ -358,6 +454,7 @@ model Document {
   profilePhotoOf User?              @relation("UserProfilePhoto")
   events         DocumentEvent[]
   reminders      DocumentReminder[]
+  serviceRequestPhotos ServiceRequestPhoto[]
 
   @@index([ownerId])
   @@index([type])
@@ -695,4 +792,226 @@ model EvaluationSubmission {
 
   @@index([passed, createdAt])
   @@map("evaluation_submissions")
+}
+
+model ServiceRequest {
+  id          String              @id @default(uuid()) @db.Uuid
+  clientId    String              @db.Uuid
+  type        ServiceRequestType
+  urgency     UrgencyLevel
+  zoneId      String              @db.Uuid
+  description String
+  status      ServiceRequestStatus @default(OPEN)
+  cancelledAt DateTime?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  client   User                 @relation("ServiceRequestClient", fields: [clientId], references: [id], onDelete: Cascade)
+  zone     ServiceZone          @relation(fields: [zoneId], references: [id], onDelete: Restrict)
+  photos   ServiceRequestPhoto[]
+  proposals ServiceProposal[]
+  mission Mission?
+
+  @@index([clientId, createdAt])
+  @@index([zoneId, status])
+  @@map("service_requests")
+}
+
+model ServiceRequestPhoto {
+  id        String @id @default(uuid()) @db.Uuid
+  requestId String @db.Uuid
+  documentId String @unique @db.Uuid
+  createdAt DateTime @default(now())
+
+  request  ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  document Document       @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@map("service_request_photos")
+}
+
+model Favorite {
+  clientId             String   @db.Uuid
+  professionalProfileId String  @db.Uuid
+  createdAt            DateTime @default(now())
+
+  client             User               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  professionalProfile ProfessionalProfile @relation(fields: [professionalProfileId], references: [id], onDelete: Cascade)
+
+  @@id([clientId, professionalProfileId])
+  @@index([professionalProfileId])
+  @@map("favorites")
+}
+
+model ServiceProposal {
+  id                   String         @id @default(uuid()) @db.Uuid
+  requestId            String         @db.Uuid
+  professionalProfileId String        @db.Uuid
+  message              String
+  status               ProposalStatus @default(PENDING)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  request   ServiceRequest      @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  professionalProfile ProfessionalProfile @relation(fields: [professionalProfileId], references: [id], onDelete: Cascade)
+  mission   Mission?
+
+  @@unique([requestId, professionalProfileId])
+  @@index([professionalProfileId, status])
+  @@map("service_proposals")
+}
+
+model Mission {
+  id                    String        @id @default(uuid()) @db.Uuid
+  requestId             String        @unique @db.Uuid
+  proposalId            String?       @unique @db.Uuid
+  clientId              String        @db.Uuid
+  professionalProfileId String        @db.Uuid
+  status                MissionStatus @default(ACCEPTED)
+  arrivalCodeHash       String?
+  arrivalCodeExpiresAt  DateTime?
+  arrivalCodeAttempts   Int           @default(0)
+  arrivalCodeUsedAt     DateTime?
+  previousProfessionalId String?     @db.Uuid
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  request             ServiceRequest      @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  proposal            ServiceProposal?    @relation(fields: [proposalId], references: [id], onDelete: SetNull)
+  client              User                @relation("MissionClient", fields: [clientId], references: [id], onDelete: Restrict)
+  professionalProfile ProfessionalProfile @relation("MissionProfessional", fields: [professionalProfileId], references: [id], onDelete: Restrict)
+  conversation        Conversation?
+  quotes              Quote[]
+  events              MissionEvent[]
+  positions           MissionPosition[]
+  report              ServiceReport?
+
+  @@index([clientId, createdAt])
+  @@index([professionalProfileId, status])
+  @@index([status])
+  @@map("missions")
+}
+
+model Conversation {
+  id            String   @id @default(uuid()) @db.Uuid
+  missionId     String   @unique @db.Uuid
+  createdAt     DateTime @default(now())
+  lastMessageAt DateTime @default(now())
+
+  mission      Mission                     @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@index([lastMessageAt])
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  conversationId    String  @db.Uuid
+  userId            String  @db.Uuid
+  lastReadMessageId BigInt? @db.BigInt
+  lastReadAt        DateTime?
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([conversationId, userId])
+  @@map("conversation_participants")
+}
+
+model Message {
+  id             BigInt    @id @default(autoincrement()) @db.BigInt
+  conversationId String    @db.Uuid
+  senderId       String    @db.Uuid
+  body           String
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Restrict)
+
+  @@index([conversationId, id])
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
+
+model Quote {
+  id         String     @id @default(uuid()) @db.Uuid
+  missionId  String     @db.Uuid
+  version    Int
+  status     QuoteStatus @default(DRAFT)
+  validUntil DateTime
+  totalCents Int
+  currency   String     @default("XOF")
+  notes      String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  mission Mission     @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  lines   QuoteLine[]
+
+  @@unique([missionId, version])
+  @@index([missionId, status])
+  @@map("quotes")
+}
+
+model QuoteLine {
+  id            String @id @default(uuid()) @db.Uuid
+  quoteId       String @db.Uuid
+  label         String
+  quantity      Int
+  unitPriceCents Int
+  sortOrder     Int    @default(0)
+
+  quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@index([quoteId, sortOrder])
+  @@map("quote_lines")
+}
+
+model MissionEvent {
+  id        BigInt          @id @default(autoincrement()) @db.BigInt
+  missionId String          @db.Uuid
+  type      MissionEventType
+  actorId   String          @db.Uuid
+  metadata  Json?
+  createdAt DateTime        @default(now())
+
+  mission Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  actor   User    @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([missionId, id])
+  @@index([missionId, createdAt])
+  @@map("mission_events")
+}
+
+model MissionPosition {
+  id             BigInt   @id @default(autoincrement()) @db.BigInt
+  missionId      String   @db.Uuid
+  lat            Float
+  lng            Float
+  accuracyMeters Int?
+  recordedAt     DateTime
+  createdAt      DateTime @default(now())
+
+  mission Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  @@index([missionId, id])
+  @@index([createdAt])
+  @@map("mission_positions")
+}
+
+model ServiceReport {
+  id        String   @id @default(uuid()) @db.Uuid
+  missionId String   @unique @db.Uuid
+  authorId  String   @db.Uuid
+  summary   String
+  checklist Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  mission Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  author  User    @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@map("service_reports")
 }

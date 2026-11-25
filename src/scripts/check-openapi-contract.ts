@@ -44,6 +44,22 @@ const requiredErrorCodes = [
   'IP_NOT_ALLOWED',
   'IDEMPOTENCY_CONFLICT',
   'DOCUMENT_NOT_AVAILABLE',
+  'SERVICE_REQUEST_NOT_FOUND',
+  'DOCUMENT_NOT_BREAKDOWN_PHOTO',
+  'PROFESSIONAL_NOT_ELIGIBLE',
+  'FAVORITE_ALREADY_EXISTS',
+  'PROPOSAL_ALREADY_EXISTS',
+  'MISSION_NOT_PARTICIPANT',
+  'ARRIVAL_CODE_INVALID',
+  'ARRIVAL_CODE_EXPIRED',
+  'ARRIVAL_CODE_ALREADY_USED',
+  'CONVERSATION_NOT_PARTICIPANT',
+  'MESSAGE_NOT_OWNED',
+  'QUOTE_NOT_SUBMITTED',
+  'QUOTE_EXPIRED',
+  'WORK_NOT_AUTHORIZED',
+  'POSITION_TOO_SOON',
+  'CHECKLIST_CRITICAL_FAILED',
 ];
 
 const errors: string[] = [];
@@ -82,7 +98,7 @@ async function main(): Promise<void> {
   const raw = await readFile(join(process.cwd(), 'docs', 'openapi.json'), 'utf8');
   const contract = JSON.parse(raw) as OpenApiContract;
   const schemas = contract.components?.schemas ?? {};
-  const expectedVersion = process.env.CONTRAT_VERSION ?? '1.0.0';
+  const expectedVersion = process.env.CONTRAT_VERSION ?? '1.1.0';
   const operation = (path: string, method: string): Operation =>
     contract.paths[path]?.[method] ?? {};
 
@@ -184,6 +200,45 @@ async function main(): Promise<void> {
     expect(operation(path, method).deprecated === true, `${method} ${path} doit être déprécié`);
   }
   expect(Boolean(schemas.EvaluationResponseDto), 'EvaluationResponseDto doit être exposé');
+
+  const requiredRoutes: Array<[string, string]> = [
+    ['/api/v1/service-requests', 'post'],
+    ['/api/v1/service-requests/mine', 'get'],
+    ['/api/v1/service-requests/{id}', 'get'],
+    ['/api/v1/service-requests/{id}/cancel', 'post'],
+    ['/api/v1/professionals/search', 'get'],
+    ['/api/v1/professionals/{id}/public', 'get'],
+    ['/api/v1/professionals/{id}/favorite', 'post'],
+    ['/api/v1/professionals/{id}/favorite', 'delete'],
+    ['/api/v1/professionals/favorites', 'get'],
+    ['/api/v1/pro/availability', 'patch'],
+    ['/api/v1/service-requests/{id}/proposals', 'post'],
+    ['/api/v1/service-requests/{id}/proposals', 'get'],
+    ['/api/v1/proposals/{id}/accept', 'post'],
+    ['/api/v1/missions', 'get'],
+    ['/api/v1/missions/{id}', 'get'],
+    ['/api/v1/missions/{id}/arrival-code', 'post'],
+    ['/api/v1/missions/{id}/arrival-code/verify', 'post'],
+    ['/api/v1/missions/{id}/reassign', 'post'],
+    ['/api/v1/conversations', 'get'],
+    ['/api/v1/conversations/{id}/messages', 'get'],
+    ['/api/v1/conversations/{id}/messages', 'post'],
+    ['/api/v1/conversations/{id}/messages/{messageId}', 'delete'],
+    ['/api/v1/conversations/{id}/read', 'post'],
+    ['/api/v1/missions/{id}/quotes', 'post'],
+    ['/api/v1/missions/{id}/quotes', 'get'],
+    ['/api/v1/quotes/{id}/accept', 'post'],
+    ['/api/v1/quotes/{id}/reject', 'post'],
+    ['/api/v1/missions/{id}/authorize-emergency', 'post'],
+    ['/api/v1/missions/{id}/events', 'post'],
+    ['/api/v1/missions/{id}/positions', 'post'],
+    ['/api/v1/missions/{id}/report', 'post'],
+    ['/api/v1/missions/{id}/report', 'get'],
+    ['/api/v1/missions/{id}/close', 'post'],
+  ];
+  for (const [path, method] of requiredRoutes) {
+    expect(Boolean(operation(path, method).responses), `${method} ${path} doit être documenté`);
+  }
 
   if (errors.length > 0) {
     console.error(errors.map((error) => `- ${error}`).join('\n'));

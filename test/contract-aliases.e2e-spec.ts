@@ -46,7 +46,7 @@ describe('Alias de contrat (e2e)', () => {
   it('expose la version du contrat', async () => {
     const response = await request(app.getHttpServer()).get('/version').expect(200);
 
-    expect(response.body.contractVersion).toBe('1.0.0');
+    expect(response.body.contractVersion).toBe('1.1.0');
   });
 
   it('expose les alias devices et notifications', async () => {
