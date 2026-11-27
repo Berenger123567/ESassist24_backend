@@ -41,7 +41,7 @@ const envSchema = z
     DOCUMENT_EXPIRY_DAYS: z.coerce.number().int().min(1).default(365),
     DOCUMENT_SIGNED_URL_TTL_SECONDS: z.coerce.number().int().min(30).default(600),
     APP_VERSION: z.string().min(1).default('0.1.0'),
-    CONTRAT_VERSION: z.string().min(1).default('1.1.0'),
+    CONTRAT_VERSION: z.string().min(1).default('1.2.0'),
 
     AUTH_COOKIE_DOMAIN: z.string().optional().or(z.literal('')),
     AUTH_COOKIE_SECURE: z.enum(['true', 'false']).default('false'),
@@ -72,6 +72,34 @@ const envSchema = z
     MISSION_POSITION_PURGE_CRON: z.string().min(1).default('0 3 * * *'),
     PRO_SEARCH_MAX_RADIUS_KM: z.coerce.number().int().min(1).max(200).default(50),
     PRO_SEARCH_MAX_LIMIT: z.coerce.number().int().min(1).max(100).default(50),
+    PAYMENT_PROVIDER: z.enum(['CINETPAY']).default('CINETPAY'),
+    PAYMENT_SANDBOX: z.enum(['true', 'false']).default('true'),
+    CINETPAY_SITE_ID: z.string().default(''),
+    CINETPAY_API_KEY: z.string().default(''),
+    CINETPAY_WEBHOOK_SECRET: z.string().min(32).default('change-me-cinetpay-webhook-secret-32'),
+    PAYMENT_WEBHOOK_TOLERANCE_SECONDS: z.coerce.number().int().min(30).max(3600).default(300),
+    COMMISSION_RATE_PERCENT: z.coerce.number().int().min(0).max(50).default(5),
+    COMMISSION_RATE_EFFECTIVE_FROM: z.string().min(1).default('2026-01-01'),
+    FEE_MATCHING_CENTS: z.coerce.number().int().min(0).default(500),
+    FEE_VERIFICATION_CENTS: z.coerce.number().int().min(0).default(1000),
+    SUBSCRIPTION_PRO_PRICE_CENTS: z.coerce.number().int().min(0).default(5000),
+    SUBSCRIPTION_PREMIUM_PRICE_CENTS: z.coerce.number().int().min(0).default(15000),
+    SUBSCRIPTION_GRACE_DAYS: z.coerce.number().int().min(0).default(7),
+    RECONCILIATION_CRON: z.string().min(1).default('0 2 * * *'),
+    RECONCILIATION_TOLERANCE_CENTS: z.coerce.number().int().min(0).default(0),
+    REVIEW_SCORE_WEIGHTS: z.string().min(1).default('30,20,15,15,20'),
+    REVIEW_SUSPICION_MAX_PER_HOUR: z.coerce.number().int().min(1).default(5),
+    REPUTATION_LEVELS: z
+      .string()
+      .min(1)
+      .default('BRONZE:0:0,ARGENT:4.5:20,OR:4.7:50,PLATINE:4.9:100'),
+    CLAIM_ACK_SLA_HOURS: z.coerce.number().int().min(1).default(2),
+    CLAIM_RESOLUTION_SLA_HOURS: z.coerce.number().int().min(1).default(72),
+    GUARANTEE_DAYS: z.coerce.number().int().min(1).default(30),
+    BACKUP_RETENTION_DAYS: z.coerce.number().int().min(1).default(30),
+    LEGAL_TERMS_VERSION: z.string().min(1).default('1.0.0'),
+    LEGAL_PRIVACY_VERSION: z.string().min(1).default('1.0.0'),
+    LEGAL_GEO_CONSENT_VERSION: z.string().min(1).default('1.0.0'),
     FCM_PROJECT_ID: z.string().default(''),
     FCM_CLIENT_EMAIL: z.string().default(''),
     FCM_PRIVATE_KEY: z.string().default(''),
@@ -128,6 +156,27 @@ const envSchema = z
           code: 'custom',
           path: ['DOCUMENT_SIGNING_SECRET'],
           message: 'Le secret de signature documentaire par défaut est interdit en production.',
+        });
+      }
+      if (!env.CINETPAY_SITE_ID.trim() || !env.CINETPAY_API_KEY.trim()) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['CINETPAY_SITE_ID'],
+          message: 'Les identifiants CinetPay sont obligatoires en production.',
+        });
+      }
+      if (env.CINETPAY_WEBHOOK_SECRET.startsWith('change-me')) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['CINETPAY_WEBHOOK_SECRET'],
+          message: 'Le secret webhook CinetPay par défaut est interdit en production.',
+        });
+      }
+      if (env.PAYMENT_SANDBOX === 'true') {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['PAYMENT_SANDBOX'],
+          message: 'PAYMENT_SANDBOX doit être false en production.',
         });
       }
       if (!env.ADMIN_IP_ALLOWLIST.trim()) {

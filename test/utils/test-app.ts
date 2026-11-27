@@ -19,6 +19,31 @@ export async function createTestApp(): Promise<{
 }
 
 export async function resetData(prisma: PrismaService): Promise<void> {
+  await prisma.appeal.deleteMany();
+  await prisma.suspension.deleteMany();
+  await prisma.legalConsent.deleteMany();
+  await prisma.legalDocument.deleteMany();
+  await prisma.backupRecord.deleteMany();
+  await prisma.reviewContest.deleteMany();
+  await prisma.reviewResponse.deleteMany();
+  await prisma.reviewFlag.deleteMany();
+  await prisma.review.deleteMany();
+  await prisma.reputationSnapshot.deleteMany();
+  await prisma.claim.deleteMany();
+  await prisma.guarantee.deleteMany();
+  await prisma.reconciliationReport.deleteMany();
+  await prisma.feeCharge.deleteMany();
+  await prisma.paymentIntent.deleteMany();
+  await prisma.subscription.deleteMany();
+  await prisma.providerWebhookEvent.deleteMany();
+  await prisma.commissionRate.deleteMany();
+  await prisma.$executeRawUnsafe('ALTER TABLE "ledger_entries" DISABLE TRIGGER ALL');
+  try {
+    await prisma.ledgerEntry.deleteMany();
+  } finally {
+    await prisma.$executeRawUnsafe('ALTER TABLE "ledger_entries" ENABLE TRIGGER ALL');
+  }
+  await prisma.ledgerAccount.deleteMany();
   await prisma.serviceReport.deleteMany();
   await prisma.missionPosition.deleteMany();
   await prisma.missionEvent.deleteMany();

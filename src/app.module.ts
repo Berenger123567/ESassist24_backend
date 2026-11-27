@@ -11,6 +11,7 @@ import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { ClosureModule } from './modules/closure/closure.module';
+import { ComplianceModule } from './modules/compliance/compliance.module';
 import { DataRequestsModule } from './modules/data-requests/data-requests.module';
 import { DevicesModule } from './modules/devices/devices.module';
 import { DocumentsModule } from './modules/documents/documents.module';
@@ -20,8 +21,10 @@ import { IdempotencyModule } from './modules/idempotency/idempotency.module';
 import { MessagingModule } from './modules/messaging/messaging.module';
 import { MissionsModule } from './modules/missions/missions.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 import { ProfilesModule } from './modules/profiles/profiles.module';
 import { ServiceRequestsModule } from './modules/service-requests/service-requests.module';
+import { TrustModule } from './modules/trust/trust.module';
 import { UsersModule } from './modules/users/users.module';
 import { VerificationModule } from './modules/verification/verification.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -73,6 +76,9 @@ import { PrismaModule } from './prisma/prisma.module';
     MissionsModule,
     MessagingModule,
     ClosureModule,
+    PaymentsModule,
+    TrustModule,
+    ComplianceModule,
   ],
   providers: [
     {

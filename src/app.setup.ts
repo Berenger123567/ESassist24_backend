@@ -15,9 +15,11 @@ export function configureApp(app: INestApplication): void {
     '/api/v1/pro/documents/upload',
     raw({ type: () => true, limit: Math.ceil(maxUploadBytes * 1.25) }),
   );
+  app.use('/api/v1/webhooks/payments/cinetpay', raw({ type: () => true, limit: 1024 * 256 }));
   app.setGlobalPrefix('api/v1', {
     exclude: [
       { path: 'health', method: RequestMethod.GET },
+      { path: 'health/ready', method: RequestMethod.GET },
       { path: 'version', method: RequestMethod.GET },
     ],
   });

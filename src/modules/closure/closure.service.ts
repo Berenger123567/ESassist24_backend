@@ -14,6 +14,8 @@ import { AuditService } from '../audit/audit.service';
 import { MissionsService } from '../missions/missions.service';
 import { assertMissionTransition } from '../missions/mission-status';
 import { NotificationsService } from '../notifications/notifications.service';
+import { LedgerService } from '../payments/ledger.service';
+import { TrustService } from '../trust/trust.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   AuthorizeEmergencyDto,
@@ -50,6 +52,8 @@ export class ClosureService {
     private readonly notifications: NotificationsService,
     private readonly missions: MissionsService,
     private readonly config: ConfigService,
+    private readonly ledger: LedgerService,
+    private readonly trust: TrustService,
   ) {}
 
   async createQuote(
@@ -460,6 +464,8 @@ export class ClosureService {
     assertMissionTransition(mission.status, MissionStatus.CLOSED);
 
     const { updated, outboxIds } = await this.prisma.$transaction(async (tx) => {
+      await this.ledger.recordMissionCommission(user, missionId, tx);
+      const guaranteeOutboxIds = await this.trust.recordMissionClosed(missionId, tx);
       const result = await tx.mission.update({
         where: { id: missionId },
         data: { status: MissionStatus.CLOSED },
@@ -487,7 +493,10 @@ export class ClosureService {
         },
         tx,
       );
-      return { updated: result, outboxIds: notification.outboxIds };
+      return {
+        updated: result,
+        outboxIds: [...notification.outboxIds, ...guaranteeOutboxIds],
+      };
     });
     await this.notifications.enqueue(outboxIds);
     return { id: updated.id, status: updated.status };

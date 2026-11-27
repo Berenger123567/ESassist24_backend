@@ -1,8 +1,11 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Reflector } from '@nestjs/core';
+import { UserStatus } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ALLOW_SUSPENDED_KEY } from '../decorators/allow-suspended.decorator';
 import { ApiError } from '../errors/api-error';
 import { ERROR_CODES } from '../errors/error-codes';
 import { AuthUser } from '../types/auth-user';
@@ -19,6 +22,7 @@ export class AuthGuard implements CanActivate {
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly reflector: Reflector,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -54,6 +58,14 @@ export class AuthGuard implements CanActivate {
 
     if (session.user.deletedAt !== null) {
       throw new ApiError(ERROR_CODES.ACCOUNT_DELETED, 403, 'Compte supprimé.');
+    }
+
+    const allowSuspended = this.reflector.getAllAndOverride<boolean>(ALLOW_SUSPENDED_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (session.user.status === UserStatus.SUSPENDED && allowSuspended !== true) {
+      throw new ApiError(ERROR_CODES.ACCOUNT_SUSPENDED, 403, 'Compte suspendu.');
     }
 
     request.user = {

@@ -169,6 +169,16 @@ enum NotificationType {
   MISSION_COMPLETED
   REPORT_READY
   MISSION_CLOSED
+  PAYMENT_CONFIRMED
+  SUBSCRIPTION_ACTIVATED
+  REVIEW_RECEIVED
+  REVIEW_RESPONSE_RECEIVED
+  CLAIM_OPENED
+  CLAIM_STATUS_CHANGED
+  GUARANTEE_ACTIVATED
+  SUSPENSION_APPLIED
+  SUSPENSION_LIFTED
+  APPEAL_DECIDED
 }
 
 enum EvaluationAssignmentStatus {
@@ -254,27 +264,37 @@ model User {
   updatedAt       DateTime   @updatedAt
   deletedAt       DateTime?
 
-  zone                  ServiceZone?           @relation(fields: [zoneId], references: [id], onDelete: SetNull)
-  photoDocument         Document?              @relation("UserProfilePhoto", fields: [photoDocumentId], references: [id], onDelete: SetNull)
-  roles                 UserRole[]
-  sessions              Session[]
-  documents             Document[]             @relation("DocumentOwner")
-  professionalProfile   ProfessionalProfile?
-  adminCredential       AdminCredential?
-  dataRequests          DataRequest[]
-  sentInvitations       AdminInvitation[]      @relation("AdminInvitationSender")
-  devices               Device[]
-  notifications         Notification[]
-  evaluationAssignments EvaluationAssignment[] @relation("EvaluationEvaluator")
-  assignedEvaluations   EvaluationAssignment[] @relation("EvaluationAssigner")
-  evaluationSubmissions EvaluationSubmission[] @relation("EvaluationSubmitter")
-  serviceRequests       ServiceRequest[]      @relation("ServiceRequestClient")
-  missionClients        Mission[]             @relation("MissionClient")
-  favorites             Favorite[]
+  zone                    ServiceZone?              @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  photoDocument           Document?                 @relation("UserProfilePhoto", fields: [photoDocumentId], references: [id], onDelete: SetNull)
+  roles                   UserRole[]
+  sessions                Session[]
+  documents               Document[]                @relation("DocumentOwner")
+  professionalProfile     ProfessionalProfile?
+  adminCredential         AdminCredential?
+  dataRequests            DataRequest[]
+  sentInvitations         AdminInvitation[]         @relation("AdminInvitationSender")
+  devices                 Device[]
+  notifications           Notification[]
+  evaluationAssignments   EvaluationAssignment[]    @relation("EvaluationEvaluator")
+  assignedEvaluations     EvaluationAssignment[]    @relation("EvaluationAssigner")
+  evaluationSubmissions   EvaluationSubmission[]    @relation("EvaluationSubmitter")
+  serviceRequests         ServiceRequest[]          @relation("ServiceRequestClient")
+  missionClients          Mission[]                 @relation("MissionClient")
+  favorites               Favorite[]
   conversationMemberships ConversationParticipant[]
-  messages              Message[]
-  missionEvents         MissionEvent[]
-  serviceReports        ServiceReport[]
+  messages                Message[]
+  missionEvents           MissionEvent[]
+  serviceReports          ServiceReport[]
+  paymentIntents          PaymentIntent[]
+  feeCharges              FeeCharge[]
+  subscriptions           Subscription[]
+  reviewsAuthored         Review[]                  @relation("ReviewAuthor")
+  claimsFiled             Claim[]                   @relation("Claimant")
+  suspensionsActed        Suspension[]              @relation("SuspensionActor")
+  appealsSubmitted        Appeal[]                  @relation("AppealSubmitter")
+  appealsDecided          Appeal[]                  @relation("AppealDecider")
+  legalConsents           LegalConsent[]
+  reviewContests          ReviewContest[]
 
   @@index([zoneId])
   @@map("users")
@@ -368,8 +388,8 @@ model ServiceZone {
   createdAt  DateTime                             @default(now())
   updatedAt  DateTime                             @updatedAt
 
-  users         User[]
-  professionals ProfessionalZone[]
+  users           User[]
+  professionals   ProfessionalZone[]
   serviceRequests ServiceRequest[]
 
   @@index([department])
@@ -401,10 +421,16 @@ model ProfessionalProfile {
   zones                   ProfessionalZone[]
   decisions               VerificationDecision[]
   evaluationAssignments   EvaluationAssignment[]
-  certificationSubmission EvaluationSubmission? @relation("ProfileCertification", fields: [evaluationSubmissionId], references: [id], onDelete: SetNull)
+  certificationSubmission EvaluationSubmission?   @relation("ProfileCertification", fields: [evaluationSubmissionId], references: [id], onDelete: SetNull)
   favorites               Favorite[]
   proposals               ServiceProposal[]
-  missions                Mission[]              @relation("MissionProfessional")
+  missions                Mission[]               @relation("MissionProfessional")
+  subscriptions           Subscription[]
+  reviews                 Review[]
+  reviewResponses         ReviewResponse[]
+  claims                  Claim[]
+  reputationSnapshots     ReputationSnapshot[]
+  suspensions             Suspension[]
 
   @@index([status])
   @@map("professional_profiles")
@@ -450,10 +476,10 @@ model Document {
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
 
-  owner          User               @relation("DocumentOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  profilePhotoOf User?              @relation("UserProfilePhoto")
-  events         DocumentEvent[]
-  reminders      DocumentReminder[]
+  owner                User                  @relation("DocumentOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  profilePhotoOf       User?                 @relation("UserProfilePhoto")
+  events               DocumentEvent[]
+  reminders            DocumentReminder[]
   serviceRequestPhotos ServiceRequestPhoto[]
 
   @@index([ownerId])
@@ -795,22 +821,22 @@ model EvaluationSubmission {
 }
 
 model ServiceRequest {
-  id          String              @id @default(uuid()) @db.Uuid
-  clientId    String              @db.Uuid
+  id          String               @id @default(uuid()) @db.Uuid
+  clientId    String               @db.Uuid
   type        ServiceRequestType
   urgency     UrgencyLevel
-  zoneId      String              @db.Uuid
+  zoneId      String               @db.Uuid
   description String
   status      ServiceRequestStatus @default(OPEN)
   cancelledAt DateTime?
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
 
-  client   User                 @relation("ServiceRequestClient", fields: [clientId], references: [id], onDelete: Cascade)
-  zone     ServiceZone          @relation(fields: [zoneId], references: [id], onDelete: Restrict)
-  photos   ServiceRequestPhoto[]
+  client    User                  @relation("ServiceRequestClient", fields: [clientId], references: [id], onDelete: Cascade)
+  zone      ServiceZone           @relation(fields: [zoneId], references: [id], onDelete: Restrict)
+  photos    ServiceRequestPhoto[]
   proposals ServiceProposal[]
-  mission Mission?
+  mission   Mission?
 
   @@index([clientId, createdAt])
   @@index([zoneId, status])
@@ -818,10 +844,10 @@ model ServiceRequest {
 }
 
 model ServiceRequestPhoto {
-  id        String @id @default(uuid()) @db.Uuid
-  requestId String @db.Uuid
-  documentId String @unique @db.Uuid
-  createdAt DateTime @default(now())
+  id         String   @id @default(uuid()) @db.Uuid
+  requestId  String   @db.Uuid
+  documentId String   @unique @db.Uuid
+  createdAt  DateTime @default(now())
 
   request  ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
   document Document       @relation(fields: [documentId], references: [id], onDelete: Cascade)
@@ -831,11 +857,11 @@ model ServiceRequestPhoto {
 }
 
 model Favorite {
-  clientId             String   @db.Uuid
-  professionalProfileId String  @db.Uuid
-  createdAt            DateTime @default(now())
+  clientId              String   @db.Uuid
+  professionalProfileId String   @db.Uuid
+  createdAt             DateTime @default(now())
 
-  client             User               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client              User                @relation(fields: [clientId], references: [id], onDelete: Cascade)
   professionalProfile ProfessionalProfile @relation(fields: [professionalProfileId], references: [id], onDelete: Cascade)
 
   @@id([clientId, professionalProfileId])
@@ -844,17 +870,17 @@ model Favorite {
 }
 
 model ServiceProposal {
-  id                   String         @id @default(uuid()) @db.Uuid
-  requestId            String         @db.Uuid
-  professionalProfileId String        @db.Uuid
-  message              String
-  status               ProposalStatus @default(PENDING)
-  createdAt            DateTime       @default(now())
-  updatedAt            DateTime       @updatedAt
+  id                    String         @id @default(uuid()) @db.Uuid
+  requestId             String         @db.Uuid
+  professionalProfileId String         @db.Uuid
+  message               String
+  status                ProposalStatus @default(PENDING)
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
 
-  request   ServiceRequest      @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  request             ServiceRequest      @relation(fields: [requestId], references: [id], onDelete: Cascade)
   professionalProfile ProfessionalProfile @relation(fields: [professionalProfileId], references: [id], onDelete: Cascade)
-  mission   Mission?
+  mission             Mission?
 
   @@unique([requestId, professionalProfileId])
   @@index([professionalProfileId, status])
@@ -862,19 +888,19 @@ model ServiceProposal {
 }
 
 model Mission {
-  id                    String        @id @default(uuid()) @db.Uuid
-  requestId             String        @unique @db.Uuid
-  proposalId            String?       @unique @db.Uuid
-  clientId              String        @db.Uuid
-  professionalProfileId String        @db.Uuid
-  status                MissionStatus @default(ACCEPTED)
-  arrivalCodeHash       String?
-  arrivalCodeExpiresAt  DateTime?
-  arrivalCodeAttempts   Int           @default(0)
-  arrivalCodeUsedAt     DateTime?
-  previousProfessionalId String?     @db.Uuid
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
+  id                     String        @id @default(uuid()) @db.Uuid
+  requestId              String        @unique @db.Uuid
+  proposalId             String?       @unique @db.Uuid
+  clientId               String        @db.Uuid
+  professionalProfileId  String        @db.Uuid
+  status                 MissionStatus @default(ACCEPTED)
+  arrivalCodeHash        String?
+  arrivalCodeExpiresAt   DateTime?
+  arrivalCodeAttempts    Int           @default(0)
+  arrivalCodeUsedAt      DateTime?
+  previousProfessionalId String?       @db.Uuid
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
 
   request             ServiceRequest      @relation(fields: [requestId], references: [id], onDelete: Restrict)
   proposal            ServiceProposal?    @relation(fields: [proposalId], references: [id], onDelete: SetNull)
@@ -885,6 +911,11 @@ model Mission {
   events              MissionEvent[]
   positions           MissionPosition[]
   report              ServiceReport?
+  paymentIntents      PaymentIntent[]
+  feeCharges          FeeCharge[]
+  guarantees          Guarantee[]
+  claims              Claim[]
+  review              Review?
 
   @@index([clientId, createdAt])
   @@index([professionalProfileId, status])
@@ -898,7 +929,7 @@ model Conversation {
   createdAt     DateTime @default(now())
   lastMessageAt DateTime @default(now())
 
-  mission      Mission                     @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  mission      Mission                   @relation(fields: [missionId], references: [id], onDelete: Cascade)
   participants ConversationParticipant[]
   messages     Message[]
 
@@ -907,9 +938,9 @@ model Conversation {
 }
 
 model ConversationParticipant {
-  conversationId    String  @db.Uuid
-  userId            String  @db.Uuid
-  lastReadMessageId BigInt? @db.BigInt
+  conversationId    String    @db.Uuid
+  userId            String    @db.Uuid
+  lastReadMessageId BigInt?   @db.BigInt
   lastReadAt        DateTime?
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -936,16 +967,16 @@ model Message {
 }
 
 model Quote {
-  id         String     @id @default(uuid()) @db.Uuid
-  missionId  String     @db.Uuid
+  id         String      @id @default(uuid()) @db.Uuid
+  missionId  String      @db.Uuid
   version    Int
   status     QuoteStatus @default(DRAFT)
   validUntil DateTime
   totalCents Int
-  currency   String     @default("XOF")
+  currency   String      @default("XOF")
   notes      String?
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 
   mission Mission     @relation(fields: [missionId], references: [id], onDelete: Cascade)
   lines   QuoteLine[]
@@ -956,12 +987,12 @@ model Quote {
 }
 
 model QuoteLine {
-  id            String @id @default(uuid()) @db.Uuid
-  quoteId       String @db.Uuid
-  label         String
-  quantity      Int
+  id             String @id @default(uuid()) @db.Uuid
+  quoteId        String @db.Uuid
+  label          String
+  quantity       Int
   unitPriceCents Int
-  sortOrder     Int    @default(0)
+  sortOrder      Int    @default(0)
 
   quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 
@@ -970,12 +1001,12 @@ model QuoteLine {
 }
 
 model MissionEvent {
-  id        BigInt          @id @default(autoincrement()) @db.BigInt
-  missionId String          @db.Uuid
+  id        BigInt           @id @default(autoincrement()) @db.BigInt
+  missionId String           @db.Uuid
   type      MissionEventType
-  actorId   String          @db.Uuid
+  actorId   String           @db.Uuid
   metadata  Json?
-  createdAt DateTime        @default(now())
+  createdAt DateTime         @default(now())
 
   mission Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
   actor   User    @relation(fields: [actorId], references: [id], onDelete: Restrict)
@@ -1014,4 +1045,475 @@ model ServiceReport {
   author  User    @relation(fields: [authorId], references: [id], onDelete: Restrict)
 
   @@map("service_reports")
+}
+
+enum PaymentProvider {
+  CINETPAY
+}
+
+enum PaymentStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum ProviderEventStatus {
+  RECEIVED
+  PROCESSED
+  IGNORED
+  FAILED
+}
+
+enum LedgerAccountType {
+  USER
+  PROFESSIONAL
+  PLATFORM
+  PROVIDER
+}
+
+enum LedgerEntryType {
+  DEBIT
+  CREDIT
+}
+
+enum LedgerEntryReason {
+  PAYMENT
+  COMMISSION
+  MATCHING_FEE
+  VERIFICATION_FEE
+  PAYOUT
+  REVERSAL
+  SUBSCRIPTION
+  ADJUSTMENT
+}
+
+enum FeeKind {
+  COMMISSION
+  MATCHING
+  VERIFICATION
+  SUBSCRIPTION
+}
+
+enum SubscriptionPlan {
+  PRO
+  PREMIUM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+}
+
+enum ReconciliationStatus {
+  OK
+  DISCREPANCY
+}
+
+enum ReviewStatus {
+  PENDING
+  PUBLISHED
+  SUSPICIOUS
+  REJECTED
+  CONTESTED
+}
+
+enum SuspicionReason {
+  VELOCITY
+  DUPLICATE_TEXT
+  DUPLICATE_PAIR
+  SELF_REVIEW
+  LOW_SCORE_BURST
+}
+
+enum ReputationLevel {
+  BRONZE
+  ARGENT
+  OR
+  PLATINE
+}
+
+enum ClaimStatus {
+  OPEN
+  ACKNOWLEDGED
+  INVESTIGATING
+  ESCALATED
+  RESOLVED
+  REJECTED
+}
+
+enum GuaranteeStatus {
+  ACTIVE
+  CLAIMED
+  EXPIRED
+  VOID
+}
+
+enum SuspensionStatus {
+  ACTIVE
+  APPEALED
+  LIFTED
+  REJECTED
+}
+
+enum AppealStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum LegalDocumentType {
+  TERMS
+  PRIVACY
+  GEO_CONSENT
+}
+
+enum BackupStatus {
+  SUCCESS
+  FAILED
+}
+
+model CommissionRate {
+  id            String   @id @default(uuid()) @db.Uuid
+  rateBps       Int
+  effectiveFrom DateTime @unique
+  createdAt     DateTime @default(now())
+
+  @@map("commission_rates")
+}
+
+model PaymentIntent {
+  id                String          @id @default(uuid()) @db.Uuid
+  reference         String          @unique
+  clientId          String          @db.Uuid
+  missionId         String?         @unique @db.Uuid
+  subscriptionId    String?         @db.Uuid
+  provider          PaymentProvider
+  amountCents       Int
+  currency          String          @default("XOF")
+  status            PaymentStatus   @default(PENDING)
+  providerPaymentId String?
+  checkoutUrl       String?
+  expiresAt         DateTime
+  confirmedAt       DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  client       User          @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  mission      Mission?      @relation(fields: [missionId], references: [id], onDelete: SetNull)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([clientId, createdAt])
+  @@index([status])
+  @@map("payment_intents")
+}
+
+model ProviderWebhookEvent {
+  id             String              @id @default(uuid()) @db.Uuid
+  provider       PaymentProvider
+  eventId        String              @unique
+  eventType      String
+  signatureValid Boolean
+  payloadHash    String
+  status         ProviderEventStatus @default(RECEIVED)
+  error          String?
+  receivedAt     DateTime            @default(now())
+  processedAt    DateTime?
+
+  @@index([provider, receivedAt])
+  @@map("provider_webhook_events")
+}
+
+model LedgerAccount {
+  id        String            @id @default(uuid()) @db.Uuid
+  ownerType LedgerAccountType
+  ownerId   String?           @db.Uuid
+  currency  String            @default("XOF")
+  createdAt DateTime          @default(now())
+
+  entries LedgerEntry[]
+
+  @@unique([ownerType, ownerId, currency])
+  @@map("ledger_accounts")
+}
+
+model LedgerEntry {
+  id                BigInt            @id @default(autoincrement()) @db.BigInt
+  accountId         String            @db.Uuid
+  entryType         LedgerEntryType
+  amountCents       Int
+  reason            LedgerEntryReason
+  reference         String            @unique
+  priorBalanceCents Int
+  balanceCents      Int
+  reversalOfId      BigInt?           @db.BigInt
+  metadata          Json?
+  createdAt         DateTime          @default(now())
+
+  account    LedgerAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  reversalOf LedgerEntry?  @relation("LedgerReversal", fields: [reversalOfId], references: [id])
+  reversals  LedgerEntry[] @relation("LedgerReversal")
+
+  @@index([accountId, id])
+  @@map("ledger_entries")
+}
+
+model FeeCharge {
+  id          String   @id @default(uuid()) @db.Uuid
+  missionId   String?  @db.Uuid
+  userId      String?  @db.Uuid
+  kind        FeeKind
+  amountCents Int
+  currency    String   @default("XOF")
+  reference   String   @unique
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  mission Mission? @relation(fields: [missionId], references: [id], onDelete: SetNull)
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([missionId, kind])
+  @@map("fee_charges")
+}
+
+model Subscription {
+  id                     String             @id @default(uuid()) @db.Uuid
+  userId                 String             @db.Uuid
+  professionalProfileId  String?            @db.Uuid
+  plan                   SubscriptionPlan
+  status                 SubscriptionStatus @default(ACTIVE)
+  startedAt              DateTime           @default(now())
+  currentPeriodEnd       DateTime
+  cancelledAt            DateTime?
+  autoRenew              Boolean            @default(true)
+  providerSubscriptionId String?            @unique
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  user           User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
+  professional   ProfessionalProfile? @relation(fields: [professionalProfileId], references: [id], onDelete: SetNull)
+  paymentIntents PaymentIntent[]
+
+  @@index([userId, status])
+  @@map("subscriptions")
+}
+
+model ReconciliationReport {
+  id               String               @id @default(uuid()) @db.Uuid
+  date             DateTime             @db.Date
+  status           ReconciliationStatus
+  expectedCents    Int
+  actualCents      Int
+  discrepancyCents Int
+  details          Json
+  createdAt        DateTime             @default(now())
+
+  @@unique([date])
+  @@map("reconciliation_reports")
+}
+
+model Review {
+  id                    String       @id @default(uuid()) @db.Uuid
+  missionId             String       @unique @db.Uuid
+  authorId              String       @db.Uuid
+  professionalProfileId String       @db.Uuid
+  quality               Int
+  timeliness            Int
+  behaviour             Int
+  quoteCompliance       Int
+  safety                Int
+  weightedScore         Float
+  comment               String?
+  status                ReviewStatus @default(PUBLISHED)
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  mission  Mission             @relation(fields: [missionId], references: [id], onDelete: Restrict)
+  author   User                @relation("ReviewAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  profile  ProfessionalProfile @relation(fields: [professionalProfileId], references: [id], onDelete: Restrict)
+  flags    ReviewFlag[]
+  response ReviewResponse?
+  contest  ReviewContest?
+
+  @@index([professionalProfileId, createdAt])
+  @@map("reviews")
+}
+
+model ReviewFlag {
+  id        BigInt          @id @default(autoincrement()) @db.BigInt
+  reviewId  String          @db.Uuid
+  reason    SuspicionReason
+  detail    Json?
+  createdAt DateTime        @default(now())
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId])
+  @@map("review_flags")
+}
+
+model ReviewResponse {
+  id                    String   @id @default(uuid()) @db.Uuid
+  reviewId              String   @unique @db.Uuid
+  professionalProfileId String   @db.Uuid
+  body                  String
+  createdAt             DateTime @default(now())
+
+  review  Review              @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  profile ProfessionalProfile @relation(fields: [professionalProfileId], references: [id], onDelete: Restrict)
+
+  @@map("review_responses")
+}
+
+model ReviewContest {
+  id        String       @id @default(uuid()) @db.Uuid
+  reviewId  String       @unique @db.Uuid
+  authorId  String       @db.Uuid
+  body      String
+  status    AppealStatus @default(PENDING)
+  createdAt DateTime     @default(now())
+  decidedAt DateTime?
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@map("review_contests")
+}
+
+model ReputationSnapshot {
+  id                    BigInt          @id @default(autoincrement()) @db.BigInt
+  professionalProfileId String          @db.Uuid
+  score                 Float
+  level                 ReputationLevel
+  missionCount          Int
+  createdAt             DateTime        @default(now())
+
+  profile ProfessionalProfile @relation(fields: [professionalProfileId], references: [id], onDelete: Cascade)
+
+  @@index([professionalProfileId, createdAt])
+  @@map("reputation_snapshots")
+}
+
+model Claim {
+  id                  String      @id @default(uuid()) @db.Uuid
+  number              String      @unique
+  missionId           String?     @db.Uuid
+  claimantId          String      @db.Uuid
+  respondentProfileId String?     @db.Uuid
+  subject             String
+  description         String
+  status              ClaimStatus @default(OPEN)
+  ackDueAt            DateTime
+  resolutionDueAt     DateTime
+  acknowledgedAt      DateTime?
+  resolvedAt          DateTime?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  mission    Mission?             @relation(fields: [missionId], references: [id], onDelete: SetNull)
+  claimant   User                 @relation("Claimant", fields: [claimantId], references: [id], onDelete: Restrict)
+  respondent ProfessionalProfile? @relation(fields: [respondentProfileId], references: [id], onDelete: SetNull)
+
+  @@index([status, resolutionDueAt])
+  @@map("claims")
+}
+
+model Guarantee {
+  id            String          @id @default(uuid()) @db.Uuid
+  missionId     String          @unique @db.Uuid
+  coverageCents Int
+  currency      String          @default("XOF")
+  validFrom     DateTime
+  validUntil    DateTime
+  status        GuaranteeStatus @default(ACTIVE)
+  createdAt     DateTime        @default(now())
+
+  mission Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  @@index([status, validUntil])
+  @@map("guarantees")
+}
+
+model Suspension {
+  id                    String           @id @default(uuid()) @db.Uuid
+  professionalProfileId String           @db.Uuid
+  reason                String
+  evidence              Json?
+  suspendedBy           String           @db.Uuid
+  startedAt             DateTime         @default(now())
+  endsAt                DateTime?
+  status                SuspensionStatus @default(ACTIVE)
+  liftedAt              DateTime?
+  createdAt             DateTime         @default(now())
+
+  profile ProfessionalProfile @relation(fields: [professionalProfileId], references: [id], onDelete: Cascade)
+  actor   User                @relation("SuspensionActor", fields: [suspendedBy], references: [id], onDelete: Restrict)
+  appeals Appeal[]
+
+  @@index([professionalProfileId, status])
+  @@map("suspensions")
+}
+
+model Appeal {
+  id           String       @id @default(uuid()) @db.Uuid
+  suspensionId String       @db.Uuid
+  submittedBy  String       @db.Uuid
+  body         String
+  status       AppealStatus @default(PENDING)
+  decidedBy    String?      @db.Uuid
+  decidedAt    DateTime?
+  createdAt    DateTime     @default(now())
+
+  suspension Suspension @relation(fields: [suspensionId], references: [id], onDelete: Cascade)
+  submitter  User       @relation("AppealSubmitter", fields: [submittedBy], references: [id], onDelete: Restrict)
+  decider    User?      @relation("AppealDecider", fields: [decidedBy], references: [id], onDelete: SetNull)
+
+  @@index([suspensionId, status])
+  @@map("appeals")
+}
+
+model LegalDocument {
+  id          String            @id @default(uuid()) @db.Uuid
+  type        LegalDocumentType
+  version     String
+  title       String
+  content     String
+  publishedAt DateTime          @default(now())
+  createdAt   DateTime          @default(now())
+
+  consents LegalConsent[]
+
+  @@unique([type, version])
+  @@map("legal_documents")
+}
+
+model LegalConsent {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  documentId String   @db.Uuid
+  acceptedAt DateTime @default(now())
+  ip         String?
+  userAgent  String?
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  document LegalDocument @relation(fields: [documentId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, documentId])
+  @@map("legal_consents")
+}
+
+model BackupRecord {
+  id          String       @id @default(uuid()) @db.Uuid
+  status      BackupStatus
+  startedAt   DateTime     @default(now())
+  completedAt DateTime?
+  sizeBytes   Int?
+  location    String?
+  checksum    String?
+  restoredAt  DateTime?
+
+  @@index([startedAt])
+  @@map("backup_records")
 }
